@@ -11,6 +11,8 @@ use crate::error::{Auth0ApiError, Auth0Error, Result};
 use crate::api::clients::ClientsApi;
 #[cfg(feature = "connections")]
 use crate::api::connections::ConnectionsApi;
+#[cfg(feature = "logs")]
+use crate::api::logs::LogsApi;
 #[cfg(feature = "users")]
 use crate::api::users::UsersApi;
 
@@ -214,6 +216,11 @@ impl ManagementClient {
     #[cfg(feature = "connections")]
     pub fn connections(&self) -> ConnectionsApi<'_> {
         ConnectionsApi::new(self)
+    }
+
+    #[cfg(feature = "logs")]
+    pub fn logs(&self) -> LogsApi<'_> {
+        LogsApi::new(self)
     }
 }
 

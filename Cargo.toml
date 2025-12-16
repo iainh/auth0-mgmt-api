@@ -24,7 +24,8 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 wiremock = "0.6"
 
 [features]
-default = ["users", "clients", "connections"]
+default = ["users", "clients", "connections", "logs"]
 users = []
 clients = []
 connections = []
+logs = []

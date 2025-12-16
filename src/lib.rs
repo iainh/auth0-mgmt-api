@@ -14,3 +14,6 @@ pub use types::clients::*;
 
 #[cfg(feature = "connections")]
 pub use types::connections::*;
+
+#[cfg(feature = "logs")]
+pub use types::logs::*;
