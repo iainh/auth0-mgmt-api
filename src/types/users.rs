@@ -175,3 +175,19 @@ pub struct ListUsersParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub search_engine: Option<String>,
 }
+
+/// Query parameters for getting user logs.
+///
+/// See the [Auth0 Get User Logs documentation](https://auth0.com/docs/api/management/v2/users/get-logs-by-user)
+/// for detailed information about available options.
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct GetUserLogsParams {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub page: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub per_page: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sort: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub include_totals: Option<bool>,
+}

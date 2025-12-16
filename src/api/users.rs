@@ -1,6 +1,9 @@
 use crate::client::ManagementClient;
 use crate::error::{Auth0Error, Result};
-use crate::types::users::{CreateUserRequest, ListUsersParams, UpdateUserRequest, User};
+use crate::types::logs::LogEvent;
+use crate::types::users::{
+    CreateUserRequest, GetUserLogsParams, ListUsersParams, UpdateUserRequest, User,
+};
 
 /// API operations for Auth0 Users.
 ///
@@ -239,6 +242,53 @@ impl<'a> UsersApi<'a> {
     pub async fn get_by_email(&self, email: &str) -> Result<Vec<User>> {
         let mut url = self.client.base_url().join("api/v2/users-by-email")?;
         url.query_pairs_mut().append_pair("email", email);
+        self.client.get(url).await
+    }
+
+    /// Get log events for a specific user.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The user's unique identifier.
+    /// * `params` - Optional query parameters for pagination and sorting.
+    ///
+    /// # Returns
+    ///
+    /// Returns a vector of log entries for the user.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let params = GetUserLogsParams {
+    ///     per_page: Some(10),
+    ///     sort: Some("date:-1".to_string()),
+    ///     ..Default::default()
+    /// };
+    /// let logs = client.users().get_logs("auth0|123456", Some(params)).await?;
+    /// for log in logs {
+    ///     println!("Event: {:?} at {:?}", log.log_type, log.date);
+    /// }
+    /// ```
+    ///
+    /// # Documentation
+    ///
+    /// <https://auth0.com/docs/api/management/v2/users/get-logs-by-user>
+    pub async fn get_logs(
+        &self,
+        id: &str,
+        params: Option<GetUserLogsParams>,
+    ) -> Result<Vec<LogEvent>> {
+        let mut url = self
+            .client
+            .base_url()
+            .join(&format!("api/v2/users/{}/logs", urlencoding::encode(id)))?;
+
+        if let Some(p) = params {
+            let query = serde_urlencoded::to_string(&p)
+                .map_err(|e| Auth0Error::Configuration(e.to_string()))?;
+            url.set_query(Some(&query));
+        }
+
         self.client.get(url).await
     }
 }
