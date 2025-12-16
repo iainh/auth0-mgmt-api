@@ -1,4 +1,6 @@
-use auth0_mgmt_api::{CreateUserRequest, ListUsersParams, ManagementClient, UpdateUserRequest};
+use auth0_mgmt_api::{
+    CreateUserRequest, GetUserLogsParams, ListUsersParams, ManagementClient, UpdateUserRequest,
+};
 use wiremock::matchers::{bearer_token, body_json, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -429,6 +431,132 @@ async fn test_list_users_rate_limited() {
         .await;
 
     let result = client.users().list(None).await;
+
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn test_get_user_logs() {
+    let (server, client) = setup_mock_server().await;
+
+    let logs_response = serde_json::json!([
+        {
+            "log_id": "log_123",
+            "type": "s",
+            "date": "2023-11-15T10:00:00.000Z",
+            "user_id": "auth0|123456789",
+            "user_name": "test@example.com",
+            "ip": "192.168.1.1",
+            "client_id": "client_abc",
+            "client_name": "My App",
+            "description": "Successful login"
+        },
+        {
+            "log_id": "log_124",
+            "type": "f",
+            "date": "2023-11-14T09:00:00.000Z",
+            "user_id": "auth0|123456789",
+            "description": "Failed login"
+        }
+    ]);
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/users/auth0%7C123456789/logs"))
+        .and(bearer_token("test_token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&logs_response))
+        .mount(&server)
+        .await;
+
+    let logs = client
+        .users()
+        .get_logs("auth0|123456789", None)
+        .await
+        .expect("Failed to get user logs");
+
+    assert_eq!(logs.len(), 2);
+    assert_eq!(logs[0].log_id, "log_123");
+    assert_eq!(logs[0].event_type, "s");
+    assert_eq!(logs[0].description, Some("Successful login".to_string()));
+    assert_eq!(logs[1].log_id, "log_124");
+    assert_eq!(logs[1].event_type, "f");
+}
+
+#[tokio::test]
+async fn test_get_user_logs_with_params() {
+    let (server, client) = setup_mock_server().await;
+
+    let logs_response = serde_json::json!([
+        {
+            "log_id": "log_123",
+            "type": "s",
+            "date": "2023-11-15T10:00:00.000Z",
+            "user_id": "auth0|123456789"
+        }
+    ]);
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/users/auth0%7C123456789/logs"))
+        .and(query_param("page", "0"))
+        .and(query_param("per_page", "10"))
+        .and(query_param("sort", "date:-1"))
+        .and(bearer_token("test_token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&logs_response))
+        .mount(&server)
+        .await;
+
+    let params = GetUserLogsParams {
+        page: Some(0),
+        per_page: Some(10),
+        sort: Some("date:-1".to_string()),
+        ..Default::default()
+    };
+
+    let logs = client
+        .users()
+        .get_logs("auth0|123456789", Some(params))
+        .await
+        .expect("Failed to get user logs with params");
+
+    assert_eq!(logs.len(), 1);
+    assert_eq!(logs[0].log_id, "log_123");
+}
+
+#[tokio::test]
+async fn test_get_user_logs_empty() {
+    let (server, client) = setup_mock_server().await;
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/users/auth0%7C123456789/logs"))
+        .and(bearer_token("test_token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!([])))
+        .mount(&server)
+        .await;
+
+    let logs = client
+        .users()
+        .get_logs("auth0|123456789", None)
+        .await
+        .expect("Failed to get user logs");
+
+    assert!(logs.is_empty());
+}
+
+#[tokio::test]
+async fn test_get_user_logs_not_found() {
+    let (server, client) = setup_mock_server().await;
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/users/auth0%7Cnonexistent/logs"))
+        .and(bearer_token("test_token"))
+        .respond_with(ResponseTemplate::new(404).set_body_json(serde_json::json!({
+            "statusCode": 404,
+            "error": "Not Found",
+            "message": "The user does not exist."
+        })))
+        .mount(&server)
+        .await;
+
+    let result = client.users().get_logs("auth0|nonexistent", None).await;
 
     assert!(result.is_err());
 }
