@@ -1,5 +1,12 @@
 use serde::{Deserialize, Serialize};
 
+/// Represents an Auth0 connection.
+///
+/// Connections are sources of users. You can use different types of connections (databases,
+/// social providers, enterprise connections, etc.) to allow users to authenticate.
+///
+/// See the [Auth0 Connection documentation](https://auth0.com/docs/connections)
+/// for detailed information about connections and their types.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Connection {
     pub id: String,
@@ -13,6 +20,21 @@ pub struct Connection {
     pub options: Option<serde_json::Value>,
 }
 
+/// Request payload for creating a new connection.
+///
+/// # Examples
+///
+/// ```ignore
+/// let conn = CreateConnectionRequest {
+///     name: "My Database".to_string(),
+///     strategy: "auth0".to_string(),
+///     display_name: Some("My Database Connection".to_string()),
+///     ..Default::default()
+/// };
+/// ```
+///
+/// See the [Auth0 Create Connection documentation](https://auth0.com/docs/api/management/v2#!/Connections/post_connections)
+/// for detailed information about connection creation and available strategies.
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct CreateConnectionRequest {
     pub name: String,
@@ -31,6 +53,10 @@ pub struct CreateConnectionRequest {
     pub metadata: Option<serde_json::Value>,
 }
 
+/// Request payload for updating a connection.
+///
+/// See the [Auth0 Update Connection documentation](https://auth0.com/docs/api/management/v2#!/Connections/patch_connections_by_id)
+/// for detailed information about connection updates.
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct UpdateConnectionRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -47,6 +73,10 @@ pub struct UpdateConnectionRequest {
     pub metadata: Option<serde_json::Value>,
 }
 
+/// Query parameters for listing connections.
+///
+/// See the [Auth0 List Connections documentation](https://auth0.com/docs/api/management/v2#!/Connections/get_connections)
+/// for detailed information about available filters.
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct ListConnectionsParams {
     #[serde(skip_serializing_if = "Option::is_none")]

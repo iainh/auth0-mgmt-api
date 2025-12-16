@@ -1,5 +1,12 @@
 use serde::{Deserialize, Serialize};
 
+/// Represents an Auth0 log entry.
+///
+/// Log entries contain information about authentication and management API events,
+/// including user logins, sign-ups, failures, and administrative actions.
+///
+/// See the [Auth0 Logs documentation](https://auth0.com/docs/logs)
+/// for detailed information about log types and event details.
 #[derive(Debug, Clone, Deserialize)]
 pub struct LogEvent {
     pub log_id: String,
@@ -43,6 +50,9 @@ pub struct LogEvent {
     pub location_info: Option<LocationInfo>,
 }
 
+/// Geographic location information from log entries.
+///
+/// Contains country, city, and timezone information inferred from the user's IP address.
 #[derive(Debug, Clone, Deserialize)]
 pub struct LocationInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -63,6 +73,10 @@ pub struct LocationInfo {
     pub continent_code: Option<String>,
 }
 
+/// Query parameters for listing log entries.
+///
+/// See the [Auth0 List Logs documentation](https://auth0.com/docs/api/management/v2#!/Logs/get_logs)
+/// for detailed information about available filters and search options.
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct ListLogsParams {
     #[serde(skip_serializing_if = "Option::is_none")]

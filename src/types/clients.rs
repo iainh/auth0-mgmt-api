@@ -1,5 +1,12 @@
 use serde::{Deserialize, Serialize};
 
+/// Represents an Auth0 application (client).
+///
+/// Applications are used to represent the applications and services that need to integrate
+/// with your Auth0 tenant.
+///
+/// See the [Auth0 Application documentation](https://auth0.com/docs/applications)
+/// for detailed information about applications.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Client {
     pub client_id: String,
@@ -34,6 +41,22 @@ pub struct Client {
     pub organization_require_behavior: Option<String>,
 }
 
+/// Request payload for creating a new application.
+///
+/// # Examples
+///
+/// ```ignore
+/// let app = CreateClientRequest {
+///     name: "My Web App".to_string(),
+///     app_type: Some("regular_web".to_string()),
+///     callbacks: Some(vec!["https://example.com/callback".to_string()]),
+///     allowed_logout_urls: Some(vec!["https://example.com/logout".to_string()]),
+///     ..Default::default()
+/// };
+/// ```
+///
+/// See the [Auth0 Create Application documentation](https://auth0.com/docs/api/management/v2#!/Clients/post_clients)
+/// for detailed information about application creation.
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct CreateClientRequest {
     pub name: String,
@@ -79,6 +102,10 @@ pub struct CreateClientRequest {
     pub organization_require_behavior: Option<String>,
 }
 
+/// Request payload for updating an application.
+///
+/// See the [Auth0 Update Application documentation](https://auth0.com/docs/api/management/v2#!/Clients/patch_clients_by_id)
+/// for detailed information about application updates.
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct UpdateClientRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -123,6 +150,10 @@ pub struct UpdateClientRequest {
     pub initiate_login_uri: Option<String>,
 }
 
+/// Query parameters for listing applications.
+///
+/// See the [Auth0 List Applications documentation](https://auth0.com/docs/api/management/v2#!/Clients/get_clients)
+/// for detailed information about available filters.
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct ListClientsParams {
     #[serde(skip_serializing_if = "Option::is_none")]

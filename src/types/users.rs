@@ -2,6 +2,10 @@ use serde::{Deserialize, Serialize};
 
 use super::Metadata;
 
+/// Represents an Auth0 user.
+///
+/// See the [Auth0 User Profile documentation](https://auth0.com/docs/users/manage-users#user-profiles)
+/// for detailed information about user properties.
 #[derive(Debug, Clone, Deserialize)]
 pub struct User {
     pub user_id: String,
@@ -26,6 +30,9 @@ pub struct User {
     pub logins_count: Option<u64>,
 }
 
+/// Represents a user's identity (connection to an auth provider).
+///
+/// Each user can have multiple identities linked to different providers or connections.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Identity {
     pub connection: String,
@@ -35,6 +42,22 @@ pub struct Identity {
     pub is_social: bool,
 }
 
+/// Request payload for creating a new user.
+///
+/// # Examples
+///
+/// ```ignore
+/// let user = CreateUserRequest {
+///     connection: "Username-Password-Authentication".to_string(),
+///     email: Some("user@example.com".to_string()),
+///     password: Some("SecurePassword123!".to_string()),
+///     name: Some("John Doe".to_string()),
+///     ..Default::default()
+/// };
+/// ```
+///
+/// See the [Auth0 Create User documentation](https://auth0.com/docs/api/management/v2#!/Users/post_users)
+/// for detailed information about user creation.
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct CreateUserRequest {
     pub connection: String,
@@ -72,6 +95,21 @@ pub struct CreateUserRequest {
     pub verify_email: Option<bool>,
 }
 
+/// Request payload for updating a user.
+///
+/// # Examples
+///
+/// ```ignore
+/// let update = UpdateUserRequest {
+///     email: Some("newemail@example.com".to_string()),
+///     email_verified: Some(true),
+///     blocked: Some(false),
+///     ..Default::default()
+/// };
+/// ```
+///
+/// See the [Auth0 Update User documentation](https://auth0.com/docs/api/management/v2#!/Users/patch_users_by_id)
+/// for detailed information about user updates.
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct UpdateUserRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -112,6 +150,10 @@ pub struct UpdateUserRequest {
     pub verify_phone_number: Option<bool>,
 }
 
+/// Query parameters for listing users.
+///
+/// See the [Auth0 List Users documentation](https://auth0.com/docs/api/management/v2#!/Users/get_users)
+/// for detailed information about available filters and search options.
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct ListUsersParams {
     #[serde(skip_serializing_if = "Option::is_none")]
