@@ -27,7 +27,7 @@ use crate::types::clients::{Client, CreateClientRequest, ListClientsParams, Upda
 /// // Create a new application
 /// let new_app = CreateClientRequest {
 ///     name: "My Web App".to_string(),
-///     app_type: Some("regular_web".to_string()),
+///     app_type: Some(auth0_mgmt_api::AppType::RegularWeb),
 ///     ..Default::default()
 /// };
 /// let created = client.clients().create(new_app).await?;
@@ -119,7 +119,7 @@ impl<'a> ClientsApi<'a> {
     /// ```ignore
     /// let new_app = CreateClientRequest {
     ///     name: "My Native App".to_string(),
-    ///     app_type: Some("native".to_string()),
+    ///     app_type: Some(auth0_mgmt_api::AppType::Native),
     ///     callbacks: Some(vec!["myapp://callback".to_string()]),
     ///     ..Default::default()
     /// };

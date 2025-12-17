@@ -1,5 +1,6 @@
 use auth0_mgmt_api::{
-    CreateConnectionRequest, ListConnectionsParams, ManagementClient, UpdateConnectionRequest,
+    ConnectionStrategy, CreateConnectionRequest, ListConnectionsParams, ManagementClient,
+    UpdateConnectionRequest,
 };
 use wiremock::matchers::{bearer_token, body_json, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -67,9 +68,9 @@ async fn test_list_connections() {
     assert_eq!(connections.len(), 2);
     assert_eq!(connections[0].id, "con_123");
     assert_eq!(connections[0].name, "Username-Password-Authentication");
-    assert_eq!(connections[0].strategy, "auth0");
+    assert_eq!(connections[0].strategy, ConnectionStrategy::Auth0Database);
     assert_eq!(connections[1].id, "con_456");
-    assert_eq!(connections[1].strategy, "google-oauth2");
+    assert_eq!(connections[1].strategy, ConnectionStrategy::GoogleOAuth2);
 }
 
 #[tokio::test]
@@ -97,7 +98,7 @@ async fn test_list_connections_with_params() {
     let params = ListConnectionsParams {
         page: Some(0),
         per_page: Some(10),
-        strategy: Some("auth0".to_string()),
+        strategy: Some(ConnectionStrategy::Auth0Database),
         ..Default::default()
     };
 
@@ -108,7 +109,7 @@ async fn test_list_connections_with_params() {
         .expect("Failed to list connections with params");
 
     assert_eq!(connections.len(), 1);
-    assert_eq!(connections[0].strategy, "auth0");
+    assert_eq!(connections[0].strategy, ConnectionStrategy::Auth0Database);
 }
 
 #[tokio::test]
@@ -187,7 +188,7 @@ async fn test_get_connection_by_id() {
         connection.display_name,
         Some("Database Connection".to_string())
     );
-    assert_eq!(connection.strategy, "auth0");
+    assert_eq!(connection.strategy, ConnectionStrategy::Auth0Database);
     assert_eq!(connection.is_domain_connection, Some(false));
 
     let enabled_clients = connection.enabled_clients.expect("Expected enabled_clients");
@@ -231,10 +232,13 @@ async fn test_create_connection() {
 
     let request = CreateConnectionRequest {
         name: "new-database-connection".to_string(),
-        strategy: "auth0".to_string(),
+        strategy: ConnectionStrategy::Auth0Database,
         display_name: Some("New Database".to_string()),
         enabled_clients: Some(vec!["client_123".to_string()]),
-        ..Default::default()
+        options: None,
+        realms: None,
+        is_domain_connection: None,
+        metadata: None,
     };
 
     Mock::given(method("POST"))
@@ -258,7 +262,7 @@ async fn test_create_connection() {
 
     assert_eq!(connection.id, "con_new");
     assert_eq!(connection.name, "new-database-connection");
-    assert_eq!(connection.strategy, "auth0");
+    assert_eq!(connection.strategy, ConnectionStrategy::Auth0Database);
 }
 
 #[tokio::test]
@@ -282,9 +286,13 @@ async fn test_create_connection_with_options() {
 
     let request = CreateConnectionRequest {
         name: "custom-database".to_string(),
-        strategy: "auth0".to_string(),
+        strategy: ConnectionStrategy::Auth0Database,
         options: Some(options.clone()),
-        ..Default::default()
+        display_name: None,
+        enabled_clients: None,
+        realms: None,
+        is_domain_connection: None,
+        metadata: None,
     };
 
     Mock::given(method("POST"))
@@ -317,8 +325,13 @@ async fn test_create_connection_conflict() {
 
     let request = CreateConnectionRequest {
         name: "existing-connection".to_string(),
-        strategy: "auth0".to_string(),
-        ..Default::default()
+        strategy: ConnectionStrategy::Auth0Database,
+        display_name: None,
+        enabled_clients: None,
+        options: None,
+        realms: None,
+        is_domain_connection: None,
+        metadata: None,
     };
 
     Mock::given(method("POST"))
@@ -343,8 +356,13 @@ async fn test_create_connection_validation_error() {
 
     let request = CreateConnectionRequest {
         name: "".to_string(),
-        strategy: "auth0".to_string(),
-        ..Default::default()
+        strategy: ConnectionStrategy::Auth0Database,
+        display_name: None,
+        enabled_clients: None,
+        options: None,
+        realms: None,
+        is_domain_connection: None,
+        metadata: None,
     };
 
     Mock::given(method("POST"))

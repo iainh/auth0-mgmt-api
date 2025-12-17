@@ -1,4 +1,5 @@
-use auth0_mgmt_api::{CreateClientRequest, ListClientsParams, ManagementClient, UpdateClientRequest};
+use auth0_mgmt_api::{AppType, CreateClientRequest, ListClientsParams, ManagementClient, UpdateClientRequest};
+
 use wiremock::matchers::{bearer_token, body_json, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -64,7 +65,7 @@ async fn test_list_clients() {
     assert_eq!(clients.len(), 2);
     assert_eq!(clients[0].client_id, "client_123");
     assert_eq!(clients[0].name, Some("Test Application".to_string()));
-    assert_eq!(clients[0].app_type, Some("spa".to_string()));
+    assert_eq!(clients[0].app_type, Some(AppType::Spa));
     assert_eq!(clients[0].is_first_party, Some(true));
     assert_eq!(clients[1].client_id, "client_456");
     assert_eq!(clients[1].is_first_party, Some(false));
@@ -95,7 +96,7 @@ async fn test_list_clients_with_params() {
     let params = ListClientsParams {
         page: Some(0),
         per_page: Some(10),
-        app_type: Some("spa".to_string()),
+        app_type: Some(AppType::Spa),
         ..Default::default()
     };
 
@@ -106,7 +107,7 @@ async fn test_list_clients_with_params() {
         .expect("Failed to list clients with params");
 
     assert_eq!(clients.len(), 1);
-    assert_eq!(clients[0].app_type, Some("spa".to_string()));
+    assert_eq!(clients[0].app_type, Some(AppType::Spa));
 }
 
 #[tokio::test]
@@ -226,7 +227,7 @@ async fn test_create_client() {
 
     let request = CreateClientRequest {
         name: "New Application".to_string(),
-        app_type: Some("spa".to_string()),
+        app_type: Some(AppType::Spa),
         oidc_conformant: Some(true),
         callbacks: Some(vec!["https://newapp.example.com/callback".to_string()]),
         ..Default::default()
@@ -253,7 +254,7 @@ async fn test_create_client() {
 
     assert_eq!(app.client_id, "new_client_id");
     assert_eq!(app.name, Some("New Application".to_string()));
-    assert_eq!(app.app_type, Some("spa".to_string()));
+    assert_eq!(app.app_type, Some(AppType::Spa));
 }
 
 #[tokio::test]

@@ -23,7 +23,7 @@ use crate::types::connections::{
 ///
 /// // List database connections only
 /// let params = ListConnectionsParams {
-///     strategy: Some("auth0".to_string()),
+///     strategy: Some(auth0_mgmt_api::ConnectionStrategy::Auth0Database),
 ///     ..Default::default()
 /// };
 /// let db_connections = client.connections().list(Some(params)).await?;
@@ -31,7 +31,7 @@ use crate::types::connections::{
 /// // Create a new database connection
 /// let new_conn = CreateConnectionRequest {
 ///     name: "My Database".to_string(),
-///     strategy: "auth0".to_string(),
+///     strategy: auth0_mgmt_api::ConnectionStrategy::Auth0Database,
 ///     ..Default::default()
 /// };
 /// let created = client.connections().create(new_conn).await?;

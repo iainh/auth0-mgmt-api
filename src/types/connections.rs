@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use super::enums::ConnectionStrategy;
+
 /// Represents an Auth0 connection.
 ///
 /// Connections are sources of users. You can use different types of connections (databases,
@@ -12,7 +14,7 @@ pub struct Connection {
     pub id: String,
     pub name: String,
     pub display_name: Option<String>,
-    pub strategy: String,
+    pub strategy: ConnectionStrategy,
     pub realms: Option<Vec<String>>,
     pub is_domain_connection: Option<bool>,
     pub enabled_clients: Option<Vec<String>>,
@@ -35,10 +37,10 @@ pub struct Connection {
 ///
 /// See the [Auth0 Create Connection documentation](https://auth0.com/docs/api/management/v2#!/Connections/post_connections)
 /// for detailed information about connection creation and available strategies.
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct CreateConnectionRequest {
     pub name: String,
-    pub strategy: String,
+    pub strategy: ConnectionStrategy,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -51,6 +53,21 @@ pub struct CreateConnectionRequest {
     pub is_domain_connection: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
+}
+
+impl Default for CreateConnectionRequest {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            strategy: ConnectionStrategy::Auth0Database,
+            display_name: None,
+            options: None,
+            enabled_clients: None,
+            realms: None,
+            is_domain_connection: None,
+            metadata: None,
+        }
+    }
 }
 
 /// Request payload for updating a connection.
@@ -86,7 +103,7 @@ pub struct ListConnectionsParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub include_totals: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub strategy: Option<String>,
+    pub strategy: Option<ConnectionStrategy>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]

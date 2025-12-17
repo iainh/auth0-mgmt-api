@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use super::enums::{AppType, GrantType, OrganizationRequireBehavior, OrganizationUsage, TokenAuthMethod};
+
 /// Represents an Auth0 application (client).
 ///
 /// Applications are used to represent the applications and services that need to integrate
@@ -15,7 +17,7 @@ pub struct Client {
     pub description: Option<String>,
     pub global: Option<bool>,
     pub client_secret: Option<String>,
-    pub app_type: Option<String>,
+    pub app_type: Option<AppType>,
     pub logo_uri: Option<String>,
     pub is_first_party: Option<bool>,
     pub oidc_conformant: Option<bool>,
@@ -25,8 +27,8 @@ pub struct Client {
     pub client_aliases: Option<Vec<String>>,
     pub allowed_clients: Option<Vec<String>>,
     pub allowed_logout_urls: Option<Vec<String>>,
-    pub grant_types: Option<Vec<String>>,
-    pub token_endpoint_auth_method: Option<String>,
+    pub grant_types: Option<Vec<GrantType>>,
+    pub token_endpoint_auth_method: Option<TokenAuthMethod>,
     pub sso: Option<bool>,
     pub sso_disabled: Option<bool>,
     pub cross_origin_auth: Option<bool>,
@@ -37,8 +39,8 @@ pub struct Client {
     pub form_template: Option<String>,
     pub is_heroku_app: Option<bool>,
     pub initiate_login_uri: Option<String>,
-    pub organization_usage: Option<String>,
-    pub organization_require_behavior: Option<String>,
+    pub organization_usage: Option<OrganizationUsage>,
+    pub organization_require_behavior: Option<OrganizationRequireBehavior>,
 }
 
 /// Request payload for creating a new application.
@@ -46,9 +48,10 @@ pub struct Client {
 /// # Examples
 ///
 /// ```ignore
+/// use auth0_mgmt_api::AppType;
 /// let app = CreateClientRequest {
 ///     name: "My Web App".to_string(),
-///     app_type: Some("regular_web".to_string()),
+///     app_type: Some(AppType::RegularWeb),
 ///     callbacks: Some(vec!["https://example.com/callback".to_string()]),
 ///     allowed_logout_urls: Some(vec!["https://example.com/logout".to_string()]),
 ///     ..Default::default()
@@ -77,11 +80,11 @@ pub struct CreateClientRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub allowed_logout_urls: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub grant_types: Option<Vec<String>>,
+    pub grant_types: Option<Vec<GrantType>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub token_endpoint_auth_method: Option<String>,
+    pub token_endpoint_auth_method: Option<TokenAuthMethod>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub app_type: Option<String>,
+    pub app_type: Option<AppType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub oidc_conformant: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -97,9 +100,9 @@ pub struct CreateClientRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub initiate_login_uri: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub organization_usage: Option<String>,
+    pub organization_usage: Option<OrganizationUsage>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub organization_require_behavior: Option<String>,
+    pub organization_require_behavior: Option<OrganizationRequireBehavior>,
 }
 
 /// Request payload for updating an application.
@@ -127,11 +130,11 @@ pub struct UpdateClientRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub allowed_logout_urls: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub grant_types: Option<Vec<String>>,
+    pub grant_types: Option<Vec<GrantType>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub token_endpoint_auth_method: Option<String>,
+    pub token_endpoint_auth_method: Option<TokenAuthMethod>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub app_type: Option<String>,
+    pub app_type: Option<AppType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub oidc_conformant: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -171,5 +174,5 @@ pub struct ListClientsParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub is_first_party: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub app_type: Option<String>,
+    pub app_type: Option<AppType>,
 }

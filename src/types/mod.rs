@@ -1,3 +1,5 @@
+pub mod enums;
+
 #[cfg(feature = "users")]
 pub mod users;
 
@@ -13,3 +15,4 @@ pub mod logs;
 pub mod common;
 
 pub use common::*;
+pub use enums::*;
