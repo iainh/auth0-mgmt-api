@@ -1,5 +1,6 @@
 use auth0_mgmt_api::{
     CreateUserRequest, GetUserLogsParams, ListUsersParams, ManagementClient, UpdateUserRequest,
+    UserId,
 };
 use wiremock::matchers::{bearer_token, body_json, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -144,7 +145,7 @@ async fn test_get_user_by_id() {
 
     let user = client
         .users()
-        .get("auth0|123456789")
+        .get(UserId::new("auth0|123456789"))
         .await
         .expect("Failed to get user");
 
@@ -175,7 +176,7 @@ async fn test_get_user_not_found() {
         .mount(&server)
         .await;
 
-    let result = client.users().get("auth0|nonexistent").await;
+    let result = client.users().get(UserId::new("auth0|nonexistent")).await;
 
     assert!(result.is_err());
 }
@@ -282,7 +283,7 @@ async fn test_update_user() {
 
     let user = client
         .users()
-        .update("auth0|123456789", request)
+        .update(UserId::new("auth0|123456789"), request)
         .await
         .expect("Failed to update user");
 
@@ -301,7 +302,7 @@ async fn test_delete_user() {
         .mount(&server)
         .await;
 
-    let result = client.users().delete("auth0|123456789").await;
+    let result = client.users().delete(UserId::new("auth0|123456789")).await;
 
     assert!(result.is_ok());
 }
@@ -321,7 +322,7 @@ async fn test_delete_user_not_found() {
         .mount(&server)
         .await;
 
-    let result = client.users().delete("auth0|nonexistent").await;
+    let result = client.users().delete(UserId::new("auth0|nonexistent")).await;
 
     assert!(result.is_err());
 }
@@ -469,7 +470,7 @@ async fn test_get_user_logs() {
 
     let logs = client
         .users()
-        .get_logs("auth0|123456789", None)
+        .get_logs(UserId::new("auth0|123456789"), None)
         .await
         .expect("Failed to get user logs");
 
@@ -513,7 +514,7 @@ async fn test_get_user_logs_with_params() {
 
     let logs = client
         .users()
-        .get_logs("auth0|123456789", Some(params))
+        .get_logs(UserId::new("auth0|123456789"), Some(params))
         .await
         .expect("Failed to get user logs with params");
 
@@ -534,7 +535,7 @@ async fn test_get_user_logs_empty() {
 
     let logs = client
         .users()
-        .get_logs("auth0|123456789", None)
+        .get_logs(UserId::new("auth0|123456789"), None)
         .await
         .expect("Failed to get user logs");
 
@@ -556,7 +557,7 @@ async fn test_get_user_logs_not_found() {
         .mount(&server)
         .await;
 
-    let result = client.users().get_logs("auth0|nonexistent", None).await;
+    let result = client.users().get_logs(UserId::new("auth0|nonexistent"), None).await;
 
     assert!(result.is_err());
 }

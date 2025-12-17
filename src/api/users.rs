@@ -4,6 +4,7 @@ use crate::types::logs::LogEvent;
 use crate::types::users::{
     CreateUserRequest, GetUserLogsParams, ListUsersParams, UpdateUserRequest, User,
 };
+use crate::types::UserId;
 
 /// API operations for Auth0 Users.
 ///
@@ -106,18 +107,19 @@ impl<'a> UsersApi<'a> {
     /// # Examples
     ///
     /// ```ignore
-    /// let user = client.users().get("auth0|123456").await?;
+    /// use auth0_mgmt_api::UserId;
+    /// let user = client.users().get(UserId::new("auth0|123456")).await?;
     /// println!("User email: {:?}", user.email);
     /// ```
     ///
     /// # Documentation
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Users/get_users_by_id>
-    pub async fn get(&self, id: &str) -> Result<User> {
+    pub async fn get(&self, id: UserId) -> Result<User> {
         let url = self
             .client
             .base_url()
-            .join(&format!("api/v2/users/{}", urlencoding::encode(id)))?;
+            .join(&format!("api/v2/users/{}", urlencoding::encode(id.as_str())))?;
 
         self.client.get(url).await
     }
@@ -168,22 +170,23 @@ impl<'a> UsersApi<'a> {
     /// # Examples
     ///
     /// ```ignore
+    /// use auth0_mgmt_api::UserId;
     /// let update = UpdateUserRequest {
     ///     email: Some("newemail@example.com".to_string()),
     ///     blocked: Some(false),
     ///     ..Default::default()
     /// };
-    /// let updated = client.users().update("auth0|123456", update).await?;
+    /// let updated = client.users().update(UserId::new("auth0|123456"), update).await?;
     /// ```
     ///
     /// # Documentation
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Users/patch_users_by_id>
-    pub async fn update(&self, id: &str, request: UpdateUserRequest) -> Result<User> {
+    pub async fn update(&self, id: UserId, request: UpdateUserRequest) -> Result<User> {
         let url = self
             .client
             .base_url()
-            .join(&format!("api/v2/users/{}", urlencoding::encode(id)))?;
+            .join(&format!("api/v2/users/{}", urlencoding::encode(id.as_str())))?;
 
         self.client.patch(url, &request).await
     }
@@ -201,18 +204,19 @@ impl<'a> UsersApi<'a> {
     /// # Examples
     ///
     /// ```ignore
-    /// client.users().delete("auth0|123456").await?;
+    /// use auth0_mgmt_api::UserId;
+    /// client.users().delete(UserId::new("auth0|123456")).await?;
     /// println!("User deleted successfully");
     /// ```
     ///
     /// # Documentation
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Users/delete_users_by_id>
-    pub async fn delete(&self, id: &str) -> Result<()> {
+    pub async fn delete(&self, id: UserId) -> Result<()> {
         let url = self
             .client
             .base_url()
-            .join(&format!("api/v2/users/{}", urlencoding::encode(id)))?;
+            .join(&format!("api/v2/users/{}", urlencoding::encode(id.as_str())))?;
 
         self.client.delete(url).await
     }
@@ -259,12 +263,13 @@ impl<'a> UsersApi<'a> {
     /// # Examples
     ///
     /// ```ignore
+    /// use auth0_mgmt_api::UserId;
     /// let params = GetUserLogsParams {
     ///     per_page: Some(10),
     ///     sort: Some("date:-1".to_string()),
     ///     ..Default::default()
     /// };
-    /// let logs = client.users().get_logs("auth0|123456", Some(params)).await?;
+    /// let logs = client.users().get_logs(UserId::new("auth0|123456"), Some(params)).await?;
     /// for log in logs {
     ///     println!("Event: {:?} at {:?}", log.log_type, log.date);
     /// }
@@ -275,13 +280,13 @@ impl<'a> UsersApi<'a> {
     /// <https://auth0.com/docs/api/management/v2/users/get-logs-by-user>
     pub async fn get_logs(
         &self,
-        id: &str,
+        id: UserId,
         params: Option<GetUserLogsParams>,
     ) -> Result<Vec<LogEvent>> {
         let mut url = self
             .client
             .base_url()
-            .join(&format!("api/v2/users/{}/logs", urlencoding::encode(id)))?;
+            .join(&format!("api/v2/users/{}/logs", urlencoding::encode(id.as_str())))?;
 
         if let Some(p) = params {
             let query = serde_urlencoded::to_string(&p)

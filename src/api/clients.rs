@@ -1,6 +1,7 @@
 use crate::client::ManagementClient;
 use crate::error::{Auth0Error, Result};
 use crate::types::clients::{Client, CreateClientRequest, ListClientsParams, UpdateClientRequest};
+use crate::types::ClientId;
 
 /// API operations for Auth0 Applications (Clients).
 ///
@@ -88,18 +89,19 @@ impl<'a> ClientsApi<'a> {
     /// # Examples
     ///
     /// ```ignore
-    /// let app = client.clients().get("YOUR_CLIENT_ID").await?;
+    /// use auth0_mgmt_api::ClientId;
+    /// let app = client.clients().get(ClientId::new("YOUR_CLIENT_ID")).await?;
     /// println!("App name: {}", app.name.unwrap_or_default());
     /// ```
     ///
     /// # Documentation
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Clients/get_clients_by_id>
-    pub async fn get(&self, id: &str) -> Result<Client> {
+    pub async fn get(&self, id: ClientId) -> Result<Client> {
         let url = self
             .client
             .base_url()
-            .join(&format!("api/v2/clients/{}", urlencoding::encode(id)))?;
+            .join(&format!("api/v2/clients/{}", urlencoding::encode(id.as_str())))?;
 
         self.client.get(url).await
     }
@@ -149,11 +151,11 @@ impl<'a> ClientsApi<'a> {
     /// # Documentation
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Clients/patch_clients_by_id>
-    pub async fn update(&self, id: &str, request: UpdateClientRequest) -> Result<Client> {
+    pub async fn update(&self, id: ClientId, request: UpdateClientRequest) -> Result<Client> {
         let url = self
             .client
             .base_url()
-            .join(&format!("api/v2/clients/{}", urlencoding::encode(id)))?;
+            .join(&format!("api/v2/clients/{}", urlencoding::encode(id.as_str())))?;
 
         self.client.patch(url, &request).await
     }
@@ -171,11 +173,11 @@ impl<'a> ClientsApi<'a> {
     /// # Documentation
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Clients/delete_clients_by_id>
-    pub async fn delete(&self, id: &str) -> Result<()> {
+    pub async fn delete(&self, id: ClientId) -> Result<()> {
         let url = self
             .client
             .base_url()
-            .join(&format!("api/v2/clients/{}", urlencoding::encode(id)))?;
+            .join(&format!("api/v2/clients/{}", urlencoding::encode(id.as_str())))?;
 
         self.client.delete(url).await
     }
@@ -193,17 +195,18 @@ impl<'a> ClientsApi<'a> {
     /// # Examples
     ///
     /// ```ignore
-    /// let rotated = client.clients().rotate_secret("YOUR_CLIENT_ID").await?;
+    /// use auth0_mgmt_api::ClientId;
+    /// let rotated = client.clients().rotate_secret(ClientId::new("YOUR_CLIENT_ID")).await?;
     /// println!("New secret: {}", rotated.client_secret.unwrap_or_default());
     /// ```
     ///
     /// # Documentation
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Clients/post_rotate_secret>
-    pub async fn rotate_secret(&self, id: &str) -> Result<Client> {
+    pub async fn rotate_secret(&self, id: ClientId) -> Result<Client> {
         let url = self.client.base_url().join(&format!(
             "api/v2/clients/{}/rotate-secret",
-            urlencoding::encode(id)
+            urlencoding::encode(id.as_str())
         ))?;
 
         self.client.post(url, &()).await

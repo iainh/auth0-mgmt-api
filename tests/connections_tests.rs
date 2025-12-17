@@ -1,6 +1,6 @@
 use auth0_mgmt_api::{
-    ConnectionStrategy, CreateConnectionRequest, ListConnectionsParams, ManagementClient,
-    UpdateConnectionRequest,
+    ConnectionId, ConnectionStrategy, CreateConnectionRequest, ListConnectionsParams,
+    ManagementClient, UpdateConnectionRequest,
 };
 use wiremock::matchers::{bearer_token, body_json, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -178,7 +178,7 @@ async fn test_get_connection_by_id() {
 
     let connection = client
         .connections()
-        .get("con_123")
+        .get(ConnectionId::new("con_123"))
         .await
         .expect("Failed to get connection");
 
@@ -213,7 +213,7 @@ async fn test_get_connection_not_found() {
         .mount(&server)
         .await;
 
-    let result = client.connections().get("con_nonexistent").await;
+    let result = client.connections().get(ConnectionId::new("con_nonexistent")).await;
 
     assert!(result.is_err());
 }
@@ -412,7 +412,7 @@ async fn test_update_connection() {
 
     let connection = client
         .connections()
-        .update("con_123", request)
+        .update(ConnectionId::new("con_123"), request)
         .await
         .expect("Failed to update connection");
 
@@ -461,7 +461,7 @@ async fn test_update_connection_options() {
 
     let connection = client
         .connections()
-        .update("con_123", request)
+        .update(ConnectionId::new("con_123"), request)
         .await
         .expect("Failed to update connection options");
 
@@ -480,7 +480,7 @@ async fn test_delete_connection() {
         .mount(&server)
         .await;
 
-    let result = client.connections().delete("con_123").await;
+    let result = client.connections().delete(ConnectionId::new("con_123")).await;
 
     assert!(result.is_ok());
 }
@@ -500,7 +500,7 @@ async fn test_delete_connection_not_found() {
         .mount(&server)
         .await;
 
-    let result = client.connections().delete("con_nonexistent").await;
+    let result = client.connections().delete(ConnectionId::new("con_nonexistent")).await;
 
     assert!(result.is_err());
 }
@@ -581,7 +581,7 @@ async fn test_get_connection_with_special_characters_in_id() {
 
     let connection = client
         .connections()
-        .get("con/with/slashes")
+        .get(ConnectionId::new("con/with/slashes"))
         .await
         .expect("Failed to get connection with special characters");
 

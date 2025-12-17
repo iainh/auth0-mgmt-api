@@ -1,4 +1,4 @@
-use auth0_mgmt_api::{AppType, CreateClientRequest, ListClientsParams, ManagementClient, UpdateClientRequest};
+use auth0_mgmt_api::{AppType, ClientId, CreateClientRequest, ListClientsParams, ManagementClient, UpdateClientRequest};
 
 use wiremock::matchers::{bearer_token, body_json, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -179,7 +179,7 @@ async fn test_get_client_by_id() {
 
     let app = client
         .clients()
-        .get("client_123")
+        .get(ClientId::new("client_123"))
         .await
         .expect("Failed to get client");
 
@@ -208,7 +208,7 @@ async fn test_get_client_not_found() {
         .mount(&server)
         .await;
 
-    let result = client.clients().get("nonexistent_client").await;
+    let result = client.clients().get(ClientId::new("nonexistent_client")).await;
 
     assert!(result.is_err());
 }
@@ -314,7 +314,7 @@ async fn test_update_client() {
 
     let app = client
         .clients()
-        .update("client_123", request)
+        .update(ClientId::new("client_123"), request)
         .await
         .expect("Failed to update client");
 
@@ -333,7 +333,7 @@ async fn test_delete_client() {
         .mount(&server)
         .await;
 
-    let result = client.clients().delete("client_123").await;
+    let result = client.clients().delete(ClientId::new("client_123")).await;
 
     assert!(result.is_ok());
 }
@@ -353,7 +353,7 @@ async fn test_delete_client_not_found() {
         .mount(&server)
         .await;
 
-    let result = client.clients().delete("nonexistent").await;
+    let result = client.clients().delete(ClientId::new("nonexistent")).await;
 
     assert!(result.is_err());
 }
@@ -377,7 +377,7 @@ async fn test_rotate_client_secret() {
 
     let app = client
         .clients()
-        .rotate_secret("client_123")
+        .rotate_secret(ClientId::new("client_123"))
         .await
         .expect("Failed to rotate client secret");
 
@@ -400,7 +400,7 @@ async fn test_rotate_client_secret_not_found() {
         .mount(&server)
         .await;
 
-    let result = client.clients().rotate_secret("nonexistent").await;
+    let result = client.clients().rotate_secret(ClientId::new("nonexistent")).await;
 
     assert!(result.is_err());
 }
@@ -480,7 +480,7 @@ async fn test_get_client_with_special_characters_in_id() {
 
     let app = client
         .clients()
-        .get("client/with/slashes")
+        .get(ClientId::new("client/with/slashes"))
         .await
         .expect("Failed to get client with special characters");
 

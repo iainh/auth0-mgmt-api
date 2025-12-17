@@ -3,6 +3,7 @@ use crate::error::{Auth0Error, Result};
 use crate::types::connections::{
     Connection, CreateConnectionRequest, ListConnectionsParams, UpdateConnectionRequest,
 };
+use crate::types::ConnectionId;
 
 /// API operations for Auth0 Connections.
 ///
@@ -88,18 +89,19 @@ impl<'a> ConnectionsApi<'a> {
     /// # Examples
     ///
     /// ```ignore
-    /// let conn = client.connections().get("con_1234567890").await?;
+    /// use auth0_mgmt_api::ConnectionId;
+    /// let conn = client.connections().get(ConnectionId::new("con_1234567890")).await?;
     /// println!("Connection: {} ({})", conn.name, conn.strategy);
     /// ```
     ///
     /// # Documentation
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Connections/get_connections_by_id>
-    pub async fn get(&self, id: &str) -> Result<Connection> {
+    pub async fn get(&self, id: ConnectionId) -> Result<Connection> {
         let url = self
             .client
             .base_url()
-            .join(&format!("api/v2/connections/{}", urlencoding::encode(id)))?;
+            .join(&format!("api/v2/connections/{}", urlencoding::encode(id.as_str())))?;
 
         self.client.get(url).await
     }
@@ -136,11 +138,11 @@ impl<'a> ConnectionsApi<'a> {
     /// # Documentation
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Connections/patch_connections_by_id>
-    pub async fn update(&self, id: &str, request: UpdateConnectionRequest) -> Result<Connection> {
+    pub async fn update(&self, id: ConnectionId, request: UpdateConnectionRequest) -> Result<Connection> {
         let url = self
             .client
             .base_url()
-            .join(&format!("api/v2/connections/{}", urlencoding::encode(id)))?;
+            .join(&format!("api/v2/connections/{}", urlencoding::encode(id.as_str())))?;
 
         self.client.patch(url, &request).await
     }
@@ -158,11 +160,11 @@ impl<'a> ConnectionsApi<'a> {
     /// # Documentation
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Connections/delete_connections_by_id>
-    pub async fn delete(&self, id: &str) -> Result<()> {
+    pub async fn delete(&self, id: ConnectionId) -> Result<()> {
         let url = self
             .client
             .base_url()
-            .join(&format!("api/v2/connections/{}", urlencoding::encode(id)))?;
+            .join(&format!("api/v2/connections/{}", urlencoding::encode(id.as_str())))?;
 
         self.client.delete(url).await
     }

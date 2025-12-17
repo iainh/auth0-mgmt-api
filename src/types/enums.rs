@@ -166,3 +166,57 @@ pub enum OrganizationRequireBehavior {
     #[serde(rename = "post_login_prompt")]
     PostLoginPrompt,
 }
+
+/// Auth0 log event type codes.
+///
+/// Represents the type of event recorded in the Auth0 logs.
+/// See the [Auth0 Logs documentation](https://auth0.com/docs/logs/log-data-event-listing)
+/// for complete information about each event type.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LogEventType {
+    /// Successful login (s)
+    #[serde(rename = "s")]
+    SuccessLogin,
+    /// Failed login (f)
+    #[serde(rename = "f")]
+    FailedLogin,
+    /// Failed password change (fp)
+    #[serde(rename = "fp")]
+    FailedPasswordChange,
+    /// Failed user import (fu)
+    #[serde(rename = "fu")]
+    FailedUserImport,
+    /// Failed username/password recovery (fui)
+    #[serde(rename = "fui")]
+    FailedUsernamePasswordRecovery,
+    /// Silent authentication success (ss)
+    #[serde(rename = "ss")]
+    SilentAuthSuccess,
+    /// Failed connector exchange (fc)
+    #[serde(rename = "fc")]
+    FailedByConnector,
+    /// User logged out (cls)
+    #[serde(rename = "cls")]
+    UserLoggedOut,
+    /// Multifactor challenge (mfa)
+    #[serde(rename = "mfa")]
+    MultifactorChallenge,
+    /// Multifactor enrollment (ent)
+    #[serde(rename = "ent")]
+    MultifactorEnrollment,
+    /// Failed multifactor authentication (fmfa)
+    #[serde(rename = "fmfa")]
+    FailedMultifactorAuth,
+    /// User signed up (su)
+    #[serde(rename = "su")]
+    UserSignup,
+    /// API Operation (api)
+    #[serde(rename = "api")]
+    ApiOperation,
+    /// Client credentials exchange (cce)
+    #[serde(rename = "cce")]
+    ClientCredentialsExchange,
+    /// Failed authorization code exchange (fcc)
+    #[serde(rename = "fcc")]
+    FailedCodeExchange,
+}

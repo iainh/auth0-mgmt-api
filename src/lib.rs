@@ -6,8 +6,9 @@ pub mod types;
 pub use client::{ManagementClient, ManagementClientBuilder};
 pub use error::{Auth0Error, Result};
 pub use types::{
-    AppType, ConnectionStrategy, GrantType, OrganizationRequireBehavior, OrganizationUsage,
-    TokenAuthMethod,
+    AppType, ClientId, ConnectionId, ConnectionStrategy, GrantType, LogEventType,
+    OrganizationRequireBehavior, OrganizationUsage, Page, PerPage, SearchEngine, SortDirection,
+    SortSpec, TokenAuthMethod, UserId,
 };
 
 #[cfg(feature = "users")]
