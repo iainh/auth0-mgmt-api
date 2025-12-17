@@ -1,9 +1,11 @@
 use std::fmt;
+use std::ops::Deref;
+use serde::{Deserialize, Serialize};
 
 /// Strongly-typed user identifier.
 ///
 /// Prevents accidental confusion with other ID types (client_id, connection_id, etc.).
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct UserId(String);
 
 impl UserId {
@@ -47,10 +49,18 @@ impl AsRef<str> for UserId {
     }
 }
 
+impl Deref for UserId {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        &self.0
+    }
+}
+
 /// Strongly-typed client (application) identifier.
 ///
 /// Prevents accidental confusion with other ID types (user_id, connection_id, etc.).
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ClientId(String);
 
 impl ClientId {
@@ -94,10 +104,18 @@ impl AsRef<str> for ClientId {
     }
 }
 
+impl Deref for ClientId {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        &self.0
+    }
+}
+
 /// Strongly-typed connection identifier.
 ///
 /// Prevents accidental confusion with other ID types (user_id, client_id, etc.).
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ConnectionId(String);
 
 impl ConnectionId {
@@ -137,6 +155,14 @@ impl From<&str> for ConnectionId {
 
 impl AsRef<str> for ConnectionId {
     fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl Deref for ConnectionId {
+    type Target = str;
+
+    fn deref(&self) -> &str {
         &self.0
     }
 }

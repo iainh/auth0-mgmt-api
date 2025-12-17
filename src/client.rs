@@ -224,7 +224,7 @@ impl ManagementClient {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct ManagementClientBuilder {
     domain: Option<String>,
     client_id: Option<String>,

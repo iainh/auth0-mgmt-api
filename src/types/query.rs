@@ -84,6 +84,7 @@ impl std::fmt::Display for SortSpec {
 ///
 /// Pages are 0-indexed. Only allows values >= 0.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default)]
 pub struct Page(u32);
 
 impl Page {
@@ -103,11 +104,6 @@ impl Page {
     }
 }
 
-impl Default for Page {
-    fn default() -> Self {
-        Self(0)
-    }
-}
 
 impl From<u32> for Page {
     fn from(number: u32) -> Self {
@@ -170,12 +166,14 @@ impl std::fmt::Display for PerPage {
 /// for differences between versions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum SearchEngine {
     /// Legacy search engine (v1)
     #[serde(rename = "v1")]
     V1,
     /// Current search engine (v3) - recommended
     #[serde(rename = "v3")]
+    #[default]
     V3,
 }
 
@@ -189,11 +187,6 @@ impl SearchEngine {
     }
 }
 
-impl Default for SearchEngine {
-    fn default() -> Self {
-        SearchEngine::V3
-    }
-}
 
 impl std::fmt::Display for SearchEngine {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
