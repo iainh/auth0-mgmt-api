@@ -1,6 +1,7 @@
-use auth0_mgmt_api::ManagementClient;
+use auth0_mgmt_api::{ManagementClient, RetryConfig};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -236,4 +237,167 @@ async fn test_token_auth_failure() {
     let result = client.users().list(None).await;
 
     assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn test_token_refresh_retry_on_503() {
+    let server = MockServer::start().await;
+    let attempt_count = Arc::new(AtomicUsize::new(0));
+    let count_clone = attempt_count.clone();
+
+    Mock::given(method("POST"))
+        .and(path("/oauth/token"))
+        .respond_with(move |_: &wiremock::Request| {
+            let attempt = count_clone.fetch_add(1, Ordering::SeqCst);
+            if attempt < 2 {
+                ResponseTemplate::new(503)
+            } else {
+                ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                    "access_token": "test_token",
+                    "expires_in": 86400,
+                    "token_type": "Bearer"
+                }))
+            }
+        })
+        .mount(&server)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/users"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!([])))
+        .mount(&server)
+        .await;
+
+    let client = ManagementClient::builder()
+        .domain(server.uri())
+        .client_id("test_client_id")
+        .client_secret("test_client_secret")
+        .retry_config(RetryConfig {
+            max_retries: 3,
+            initial_delay: Duration::from_millis(10),
+            max_delay: Duration::from_millis(100),
+            multiplier: 2.0,
+        })
+        .build()
+        .expect("Failed to build client");
+
+    let result = client.users().list(None).await;
+    assert!(result.is_ok(), "Should succeed after retries");
+    assert_eq!(attempt_count.load(Ordering::SeqCst), 3, "Should have made 3 attempts");
+}
+
+#[tokio::test]
+async fn test_token_refresh_retry_exhaustion() {
+    let server = MockServer::start().await;
+    let attempt_count = Arc::new(AtomicUsize::new(0));
+    let count_clone = attempt_count.clone();
+
+    Mock::given(method("POST"))
+        .and(path("/oauth/token"))
+        .respond_with(move |_: &wiremock::Request| {
+            count_clone.fetch_add(1, Ordering::SeqCst);
+            ResponseTemplate::new(503)
+        })
+        .mount(&server)
+        .await;
+
+    let client = ManagementClient::builder()
+        .domain(server.uri())
+        .client_id("test_client_id")
+        .client_secret("test_client_secret")
+        .retry_config(RetryConfig {
+            max_retries: 2,
+            initial_delay: Duration::from_millis(10),
+            max_delay: Duration::from_millis(100),
+            multiplier: 2.0,
+        })
+        .build()
+        .expect("Failed to build client");
+
+    let result = client.users().list(None).await;
+    assert!(result.is_err(), "Should fail after exhausting retries");
+    assert_eq!(attempt_count.load(Ordering::SeqCst), 3, "Should have made initial + 2 retry attempts");
+}
+
+#[tokio::test]
+async fn test_token_refresh_retry_with_rate_limit() {
+    let server = MockServer::start().await;
+    let attempt_count = Arc::new(AtomicUsize::new(0));
+    let count_clone = attempt_count.clone();
+
+    Mock::given(method("POST"))
+        .and(path("/oauth/token"))
+        .respond_with(move |_: &wiremock::Request| {
+            let attempt = count_clone.fetch_add(1, Ordering::SeqCst);
+            if attempt == 0 {
+                ResponseTemplate::new(429).insert_header("retry-after", "1")
+            } else {
+                ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                    "access_token": "test_token",
+                    "expires_in": 86400,
+                    "token_type": "Bearer"
+                }))
+            }
+        })
+        .mount(&server)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/users"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!([])))
+        .mount(&server)
+        .await;
+
+    let client = ManagementClient::builder()
+        .domain(server.uri())
+        .client_id("test_client_id")
+        .client_secret("test_client_secret")
+        .retry_config(RetryConfig {
+            max_retries: 3,
+            initial_delay: Duration::from_millis(10),
+            max_delay: Duration::from_secs(5),
+            multiplier: 2.0,
+        })
+        .build()
+        .expect("Failed to build client");
+
+    let result = client.users().list(None).await;
+    assert!(result.is_ok(), "Should succeed after rate limit retry");
+    assert_eq!(attempt_count.load(Ordering::SeqCst), 2, "Should have made 2 attempts");
+}
+
+#[tokio::test]
+async fn test_no_retry_on_auth_failure() {
+    let server = MockServer::start().await;
+    let attempt_count = Arc::new(AtomicUsize::new(0));
+    let count_clone = attempt_count.clone();
+
+    Mock::given(method("POST"))
+        .and(path("/oauth/token"))
+        .respond_with(move |_: &wiremock::Request| {
+            count_clone.fetch_add(1, Ordering::SeqCst);
+            ResponseTemplate::new(401).set_body_json(serde_json::json!({
+                "error": "access_denied",
+                "error_description": "Invalid credentials"
+            }))
+        })
+        .mount(&server)
+        .await;
+
+    let client = ManagementClient::builder()
+        .domain(server.uri())
+        .client_id("invalid_client_id")
+        .client_secret("invalid_client_secret")
+        .retry_config(RetryConfig {
+            max_retries: 3,
+            initial_delay: Duration::from_millis(10),
+            max_delay: Duration::from_millis(100),
+            multiplier: 2.0,
+        })
+        .build()
+        .expect("Failed to build client");
+
+    let result = client.users().list(None).await;
+    assert!(result.is_err(), "Should fail on auth error");
+    assert_eq!(attempt_count.load(Ordering::SeqCst), 1, "Should not retry on auth failure");
 }

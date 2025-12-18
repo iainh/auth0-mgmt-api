@@ -5,7 +5,7 @@
 ### High Priority
 - [ ] **Token refresh race condition**: Under heavy concurrent load, multiple threads could bypass the double-check pattern and attempt simultaneous token refreshes. Implement a semaphore or dedicated token refresh task to serialize refresh attempts.
 - [ ] **Add timeout to token requests**: Token refresh requests lack timeouts, which could cause indefinite blocking. Add configurable timeout for authentication calls.
-- [ ] **Implement token refresh retry logic**: Failed token refreshes (e.g., temporary network issues) propagate immediately. Add exponential backoff retry strategy.
+- [x] **Implement token refresh retry logic**: Failed token refreshes (e.g., temporary network issues) propagate immediately. Add exponential backoff retry strategy.
 
 ### Medium Priority
 - [ ] **Make token expiration buffer configurable**: The 60-second buffer is hardcoded. Allow configuration for different use cases.

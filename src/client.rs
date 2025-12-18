@@ -23,6 +23,31 @@ pub struct ManagementClient {
     credentials: Credentials,
     token: Arc<RwLock<Option<TokenInfo>>>,
     token_refresh_semaphore: Arc<Semaphore>,
+    retry_config: RetryConfig,
+}
+
+/// Configuration for token refresh retry behavior with exponential backoff.
+#[derive(Clone, Debug)]
+pub struct RetryConfig {
+    /// Maximum number of retry attempts (not including the initial attempt).
+    pub max_retries: u32,
+    /// Initial delay before the first retry.
+    pub initial_delay: std::time::Duration,
+    /// Maximum delay between retries.
+    pub max_delay: std::time::Duration,
+    /// Multiplier applied to delay after each retry.
+    pub multiplier: f64,
+}
+
+impl Default for RetryConfig {
+    fn default() -> Self {
+        Self {
+            max_retries: 3,
+            initial_delay: std::time::Duration::from_millis(100),
+            max_delay: std::time::Duration::from_secs(10),
+            multiplier: 2.0,
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -87,33 +112,86 @@ impl ManagementClient {
         }
 
         let token_url = self.base_url.join("oauth/token")?;
-        let request = TokenRequest {
-            grant_type: "client_credentials",
-            client_id: &self.credentials.client_id,
-            client_secret: self.credentials.client_secret.expose_secret(),
-            audience: &self.credentials.audience,
-        };
 
-        let response = self.http.post(token_url).json(&request).send().await?;
+        let mut last_error = None;
+        let mut delay = self.retry_config.initial_delay;
 
-        if !response.status().is_success() {
+        for attempt in 0..=self.retry_config.max_retries {
+            if attempt > 0 {
+                tokio::time::sleep(delay).await;
+                delay = std::cmp::min(
+                    self.retry_config.max_delay,
+                    std::time::Duration::from_secs_f64(delay.as_secs_f64() * self.retry_config.multiplier),
+                );
+            }
+
+            let request = TokenRequest {
+                grant_type: "client_credentials",
+                client_id: &self.credentials.client_id,
+                client_secret: self.credentials.client_secret.expose_secret(),
+                audience: &self.credentials.audience,
+            };
+
+            let result = self.http.post(token_url.clone()).json(&request).send().await;
+
+            let response = match result {
+                Ok(resp) => resp,
+                Err(e) if Self::is_retryable_error(&e) && attempt < self.retry_config.max_retries => {
+                    last_error = Some(Auth0Error::Http(e));
+                    continue;
+                }
+                Err(e) => return Err(Auth0Error::Http(e)),
+            };
+
+            let status = response.status();
+
+            if status.is_success() {
+                let token_response: TokenResponse = response.json().await?;
+                let expires_at = std::time::Instant::now()
+                    + std::time::Duration::from_secs(token_response.expires_in.saturating_sub(60));
+
+                let mut token = self.token.write().await;
+                *token = Some(TokenInfo {
+                    access_token: token_response.access_token.clone(),
+                    expires_at,
+                });
+
+                return Ok(token_response.access_token);
+            }
+
+            if Self::is_retryable_status(status.as_u16()) && attempt < self.retry_config.max_retries {
+                if status.as_u16() == 429
+                    && let Some(retry_after) = response
+                        .headers()
+                        .get("retry-after")
+                        .and_then(|v| v.to_str().ok())
+                        .and_then(|v| v.parse::<u64>().ok())
+                {
+                    delay = std::time::Duration::from_secs(retry_after);
+                }
+                last_error = Some(Auth0Error::Authentication {
+                    message: format!("Token request failed with status {}", status.as_u16()),
+                });
+                continue;
+            }
+
             let error: Auth0ApiError = response.json().await?;
             return Err(Auth0Error::Authentication {
                 message: error.description.unwrap_or(error.message),
             });
         }
 
-        let token_response: TokenResponse = response.json().await?;
-        let expires_at =
-            std::time::Instant::now() + std::time::Duration::from_secs(token_response.expires_in - 60);
+        Err(last_error.unwrap_or_else(|| Auth0Error::Authentication {
+            message: "Token refresh failed after retries".into(),
+        }))
+    }
 
-        let mut token = self.token.write().await;
-        *token = Some(TokenInfo {
-            access_token: token_response.access_token.clone(),
-            expires_at,
-        });
+    fn is_retryable_error(error: &reqwest::Error) -> bool {
+        error.is_timeout() || error.is_connect() || error.is_request()
+    }
 
-        Ok(token_response.access_token)
+    fn is_retryable_status(status: u16) -> bool {
+        status == 429 || status == 502 || status == 503 || status == 504
     }
 
     pub(crate) async fn get<T: DeserializeOwned>(&self, url: Url) -> Result<T> {
@@ -238,6 +316,7 @@ pub struct ManagementClientBuilder {
     client_id: Option<String>,
     client_secret: Option<SecretString>,
     audience: Option<String>,
+    retry_config: Option<RetryConfig>,
 }
 
 impl ManagementClientBuilder {
@@ -258,6 +337,11 @@ impl ManagementClientBuilder {
 
     pub fn audience(mut self, audience: impl Into<String>) -> Self {
         self.audience = Some(audience.into());
+        self
+    }
+
+    pub fn retry_config(mut self, config: RetryConfig) -> Self {
+        self.retry_config = Some(config);
         self
     }
 
@@ -302,6 +386,7 @@ impl ManagementClientBuilder {
             },
             token: Arc::new(RwLock::new(None)),
             token_refresh_semaphore: Arc::new(Semaphore::new(1)),
+            retry_config: self.retry_config.unwrap_or_default(),
         })
     }
 }
