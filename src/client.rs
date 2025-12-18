@@ -2,7 +2,7 @@ use reqwest::Client;
 use secrecy::{ExposeSecret, SecretString};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, Semaphore};
 use url::Url;
 
 use crate::error::{Auth0ApiError, Auth0Error, Result};
@@ -22,6 +22,7 @@ pub struct ManagementClient {
     base_url: Url,
     credentials: Credentials,
     token: Arc<RwLock<Option<TokenInfo>>>,
+    token_refresh_semaphore: Arc<Semaphore>,
 }
 
 #[derive(Clone)]
@@ -72,11 +73,17 @@ impl ManagementClient {
             }
         }
 
-        let mut token = self.token.write().await;
-        if let Some(info) = token.as_ref()
-            && info.expires_at > std::time::Instant::now()
+        let _permit = self.token_refresh_semaphore.acquire().await.map_err(|_| {
+            Auth0Error::Configuration("Token refresh semaphore closed".into())
+        })?;
+
         {
-            return Ok(info.access_token.clone());
+            let token = self.token.read().await;
+            if let Some(info) = token.as_ref()
+                && info.expires_at > std::time::Instant::now()
+            {
+                return Ok(info.access_token.clone());
+            }
         }
 
         let token_url = self.base_url.join("oauth/token")?;
@@ -100,6 +107,7 @@ impl ManagementClient {
         let expires_at =
             std::time::Instant::now() + std::time::Duration::from_secs(token_response.expires_in - 60);
 
+        let mut token = self.token.write().await;
         *token = Some(TokenInfo {
             access_token: token_response.access_token.clone(),
             expires_at,
@@ -293,6 +301,7 @@ impl ManagementClientBuilder {
                 audience,
             },
             token: Arc::new(RwLock::new(None)),
+            token_refresh_semaphore: Arc::new(Semaphore::new(1)),
         })
     }
 }
