@@ -7,6 +7,7 @@
 - Check: `cargo check`
 - Lint: `cargo clippy`
 - Format: `cargo fmt`
+- Windows build/test: Use `--target x86_64-pc-windows-gnu` (e.g., `cargo build --target x86_64-pc-windows-gnu`)
 
 ## Architecture
 Async Rust client library for Auth0 Management API v2 using reqwest + tokio.
