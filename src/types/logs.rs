@@ -90,11 +90,24 @@ pub struct ListLogsParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub include_fields: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub include_totals: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub q: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub from: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub take: Option<u32>,
+}
+
+/// Paginated response for log list operations.
+///
+/// Returned when `include_totals` is set to `true` in list parameters.
+#[derive(Debug, Clone, Deserialize)]
+pub struct LogsPage {
+    /// List of log events in this page.
+    pub logs: Vec<LogEvent>,
+    /// Starting index of this page (zero-based).
+    pub start: u32,
+    /// Maximum number of results per page.
+    pub limit: u32,
+    /// Total number of log events matching the query.
+    pub total: u32,
 }

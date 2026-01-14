@@ -161,8 +161,6 @@ pub struct ListUsersParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub per_page: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub include_totals: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub sort: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub connection: Option<String>,
@@ -188,6 +186,19 @@ pub struct GetUserLogsParams {
     pub per_page: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sort: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub include_totals: Option<bool>,
+}
+
+/// Paginated response for user list operations.
+///
+/// Returned when `include_totals` is set to `true` in list parameters.
+#[derive(Debug, Clone, Deserialize)]
+pub struct UsersPage {
+    /// List of users in this page.
+    pub users: Vec<User>,
+    /// Starting index of this page (zero-based).
+    pub start: u32,
+    /// Maximum number of results per page.
+    pub limit: u32,
+    /// Total number of users matching the query.
+    pub total: u32,
 }

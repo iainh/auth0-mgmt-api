@@ -101,8 +101,6 @@ pub struct ListConnectionsParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub per_page: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub include_totals: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub strategy: Option<ConnectionStrategy>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -110,4 +108,19 @@ pub struct ListConnectionsParams {
     pub fields: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub include_fields: Option<bool>,
+}
+
+/// Paginated response for connection list operations.
+///
+/// Returned when `include_totals` is set to `true` in list parameters.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ConnectionsPage {
+    /// List of connections in this page.
+    pub connections: Vec<Connection>,
+    /// Starting index of this page (zero-based).
+    pub start: u32,
+    /// Maximum number of results per page.
+    pub limit: u32,
+    /// Total number of connections matching the query.
+    pub total: u32,
 }

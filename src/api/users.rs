@@ -1,8 +1,8 @@
 use crate::client::ManagementClient;
 use crate::error::{Auth0Error, Result};
-use crate::types::logs::LogEvent;
+use crate::types::logs::{LogEvent, LogsPage};
 use crate::types::users::{
-    CreateUserRequest, GetUserLogsParams, ListUsersParams, UpdateUserRequest, User,
+    CreateUserRequest, GetUserLogsParams, ListUsersParams, UpdateUserRequest, User, UsersPage,
 };
 use crate::types::UserId;
 
@@ -90,6 +90,50 @@ impl<'a> UsersApi<'a> {
                 .map_err(|e| Auth0Error::Configuration(e.to_string()))?;
             url.set_query(Some(&query));
         }
+
+        self.client.get(url).await
+    }
+
+    /// List or search users with pagination totals.
+    ///
+    /// This method automatically sets `include_totals` to `true` and returns
+    /// a paginated response with total count information.
+    ///
+    /// # Arguments
+    ///
+    /// * `params` - Optional query parameters for filtering, searching, sorting, and pagination.
+    ///
+    /// # Returns
+    ///
+    /// Returns a paginated response containing users and pagination metadata.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let params = ListUsersParams {
+    ///     page: Some(0),
+    ///     per_page: Some(50),
+    ///     ..Default::default()
+    /// };
+    /// let page = client.users().list_with_totals(Some(params)).await?;
+    /// println!("Found {} total users", page.total);
+    /// ```
+    ///
+    /// # Documentation
+    ///
+    /// <https://auth0.com/docs/api/management/v2#!/Users/get_users>
+    pub async fn list_with_totals(&self, params: Option<ListUsersParams>) -> Result<UsersPage> {
+        let mut url = self.client.base_url().join("api/v2/users")?;
+
+        let p = params.unwrap_or_default();
+        let mut query = serde_urlencoded::to_string(&p)
+            .map_err(|e| Auth0Error::Configuration(e.to_string()))?;
+        if query.is_empty() {
+            query = "include_totals=true".to_string();
+        } else {
+            query.push_str("&include_totals=true");
+        }
+        url.set_query(Some(&query));
 
         self.client.get(url).await
     }
@@ -293,6 +337,46 @@ impl<'a> UsersApi<'a> {
                 .map_err(|e| Auth0Error::Configuration(e.to_string()))?;
             url.set_query(Some(&query));
         }
+
+        self.client.get(url).await
+    }
+
+    /// Get log events for a specific user with pagination totals.
+    ///
+    /// This method automatically sets `include_totals` to `true` and returns
+    /// a paginated response with total count information.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The user's unique identifier.
+    /// * `params` - Optional query parameters for pagination and sorting.
+    ///
+    /// # Returns
+    ///
+    /// Returns a paginated response containing log events and pagination metadata.
+    ///
+    /// # Documentation
+    ///
+    /// <https://auth0.com/docs/api/management/v2/users/get-logs-by-user>
+    pub async fn get_logs_with_totals(
+        &self,
+        id: UserId,
+        params: Option<GetUserLogsParams>,
+    ) -> Result<LogsPage> {
+        let mut url = self
+            .client
+            .base_url()
+            .join(&format!("api/v2/users/{}/logs", urlencoding::encode(id.as_str())))?;
+
+        let p = params.unwrap_or_default();
+        let mut query = serde_urlencoded::to_string(&p)
+            .map_err(|e| Auth0Error::Configuration(e.to_string()))?;
+        if query.is_empty() {
+            query = "include_totals=true".to_string();
+        } else {
+            query.push_str("&include_totals=true");
+        }
+        url.set_query(Some(&query));
 
         self.client.get(url).await
     }

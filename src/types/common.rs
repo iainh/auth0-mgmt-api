@@ -9,20 +9,6 @@ pub struct PaginationParams {
     pub page: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub per_page: Option<u32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub include_totals: Option<bool>,
-}
-
-/// Represents a paginated response from a list API endpoint.
-///
-/// Contains the list of items and pagination metadata.
-#[derive(Debug, Clone, Deserialize)]
-pub struct PaginatedResponse<T> {
-    #[serde(flatten)]
-    pub items: Vec<T>,
-    pub start: Option<u32>,
-    pub limit: Option<u32>,
-    pub total: Option<u32>,
 }
 
 /// User metadata as a JSON object.

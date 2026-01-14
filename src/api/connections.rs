@@ -1,7 +1,7 @@
 use crate::client::ManagementClient;
 use crate::error::{Auth0Error, Result};
 use crate::types::connections::{
-    Connection, CreateConnectionRequest, ListConnectionsParams, UpdateConnectionRequest,
+    Connection, ConnectionsPage, CreateConnectionRequest, ListConnectionsParams, UpdateConnectionRequest,
 };
 use crate::types::ConnectionId;
 
@@ -72,6 +72,38 @@ impl<'a> ConnectionsApi<'a> {
                 .map_err(|e| Auth0Error::Configuration(e.to_string()))?;
             url.set_query(Some(&query));
         }
+
+        self.client.get(url).await
+    }
+
+    /// List or search connections with pagination totals.
+    ///
+    /// This method automatically sets `include_totals` to `true` and returns
+    /// a paginated response with total count information.
+    ///
+    /// # Arguments
+    ///
+    /// * `params` - Optional query parameters for filtering by strategy, pagination, and field selection.
+    ///
+    /// # Returns
+    ///
+    /// Returns a paginated response containing connections and pagination metadata.
+    ///
+    /// # Documentation
+    ///
+    /// <https://auth0.com/docs/api/management/v2#!/Connections/get_connections>
+    pub async fn list_with_totals(&self, params: Option<ListConnectionsParams>) -> Result<ConnectionsPage> {
+        let mut url = self.client.base_url().join("api/v2/connections")?;
+
+        let p = params.unwrap_or_default();
+        let mut query = serde_urlencoded::to_string(&p)
+            .map_err(|e| Auth0Error::Configuration(e.to_string()))?;
+        if query.is_empty() {
+            query = "include_totals=true".to_string();
+        } else {
+            query.push_str("&include_totals=true");
+        }
+        url.set_query(Some(&query));
 
         self.client.get(url).await
     }

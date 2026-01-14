@@ -164,8 +164,6 @@ pub struct ListClientsParams {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub per_page: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub include_totals: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub fields: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub include_fields: Option<bool>,
@@ -175,4 +173,19 @@ pub struct ListClientsParams {
     pub is_first_party: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub app_type: Option<AppType>,
+}
+
+/// Paginated response for client list operations.
+///
+/// Returned when `include_totals` is set to `true` in list parameters.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ClientsPage {
+    /// List of clients in this page.
+    pub clients: Vec<Client>,
+    /// Starting index of this page (zero-based).
+    pub start: u32,
+    /// Maximum number of results per page.
+    pub limit: u32,
+    /// Total number of clients matching the query.
+    pub total: u32,
 }
