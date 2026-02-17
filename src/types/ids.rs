@@ -1,6 +1,6 @@
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::ops::Deref;
-use serde::{Deserialize, Serialize};
 
 /// Strongly-typed user identifier.
 ///

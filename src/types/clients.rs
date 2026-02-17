@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use super::enums::{AppType, GrantType, OrganizationRequireBehavior, OrganizationUsage, TokenAuthMethod};
+use super::enums::{
+    AppType, GrantType, OrganizationRequireBehavior, OrganizationUsage, TokenAuthMethod,
+};
 
 /// Represents an Auth0 application (client).
 ///

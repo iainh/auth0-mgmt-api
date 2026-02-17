@@ -1,6 +1,6 @@
 use auth0_mgmt_api::{ManagementClient, RetryConfig};
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -38,12 +38,11 @@ async fn test_concurrent_token_refresh_single_request() {
         .and(path("/oauth/token"))
         .respond_with(move |_: &wiremock::Request| {
             count_clone.fetch_add(1, Ordering::SeqCst);
-            ResponseTemplate::new(200)
-                .set_body_json(serde_json::json!({
-                    "access_token": "test_token",
-                    "expires_in": 86400,
-                    "token_type": "Bearer"
-                }))
+            ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "access_token": "test_token",
+                "expires_in": 86400,
+                "token_type": "Bearer"
+            }))
         })
         .mount(&server)
         .await;
@@ -70,7 +69,10 @@ async fn test_concurrent_token_refresh_single_request() {
     }
 
     for handle in handles {
-        handle.await.expect("Task panicked").expect("Request failed");
+        handle
+            .await
+            .expect("Task panicked")
+            .expect("Request failed");
     }
 
     assert_eq!(
@@ -90,12 +92,11 @@ async fn test_token_reuse_across_requests() {
         .and(path("/oauth/token"))
         .respond_with(move |_: &wiremock::Request| {
             count_clone.fetch_add(1, Ordering::SeqCst);
-            ResponseTemplate::new(200)
-                .set_body_json(serde_json::json!({
-                    "access_token": "test_token",
-                    "expires_in": 86400,
-                    "token_type": "Bearer"
-                }))
+            ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "access_token": "test_token",
+                "expires_in": 86400,
+                "token_type": "Bearer"
+            }))
         })
         .mount(&server)
         .await;
@@ -134,12 +135,11 @@ async fn test_client_clone_shares_token() {
         .and(path("/oauth/token"))
         .respond_with(move |_: &wiremock::Request| {
             count_clone.fetch_add(1, Ordering::SeqCst);
-            ResponseTemplate::new(200)
-                .set_body_json(serde_json::json!({
-                    "access_token": "test_token",
-                    "expires_in": 86400,
-                    "token_type": "Bearer"
-                }))
+            ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "access_token": "test_token",
+                "expires_in": 86400,
+                "token_type": "Bearer"
+            }))
         })
         .mount(&server)
         .await;
@@ -283,7 +283,11 @@ async fn test_token_refresh_retry_on_503() {
 
     let result = client.users().list(None).await;
     assert!(result.is_ok(), "Should succeed after retries");
-    assert_eq!(attempt_count.load(Ordering::SeqCst), 3, "Should have made 3 attempts");
+    assert_eq!(
+        attempt_count.load(Ordering::SeqCst),
+        3,
+        "Should have made 3 attempts"
+    );
 }
 
 #[tokio::test]
@@ -316,7 +320,11 @@ async fn test_token_refresh_retry_exhaustion() {
 
     let result = client.users().list(None).await;
     assert!(result.is_err(), "Should fail after exhausting retries");
-    assert_eq!(attempt_count.load(Ordering::SeqCst), 3, "Should have made initial + 2 retry attempts");
+    assert_eq!(
+        attempt_count.load(Ordering::SeqCst),
+        3,
+        "Should have made initial + 2 retry attempts"
+    );
 }
 
 #[tokio::test]
@@ -363,7 +371,11 @@ async fn test_token_refresh_retry_with_rate_limit() {
 
     let result = client.users().list(None).await;
     assert!(result.is_ok(), "Should succeed after rate limit retry");
-    assert_eq!(attempt_count.load(Ordering::SeqCst), 2, "Should have made 2 attempts");
+    assert_eq!(
+        attempt_count.load(Ordering::SeqCst),
+        2,
+        "Should have made 2 attempts"
+    );
 }
 
 #[tokio::test]
@@ -399,5 +411,9 @@ async fn test_no_retry_on_auth_failure() {
 
     let result = client.users().list(None).await;
     assert!(result.is_err(), "Should fail on auth error");
-    assert_eq!(attempt_count.load(Ordering::SeqCst), 1, "Should not retry on auth failure");
+    assert_eq!(
+        attempt_count.load(Ordering::SeqCst),
+        1,
+        "Should not retry on auth failure"
+    );
 }

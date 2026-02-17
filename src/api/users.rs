@@ -1,10 +1,10 @@
 use crate::client::ManagementClient;
 use crate::error::{Auth0Error, Result};
+use crate::types::UserId;
 use crate::types::logs::{LogEvent, LogsPage};
 use crate::types::users::{
     CreateUserRequest, GetUserLogsParams, ListUsersParams, UpdateUserRequest, User, UsersPage,
 };
-use crate::types::UserId;
 
 /// API operations for Auth0 Users.
 ///
@@ -160,10 +160,10 @@ impl<'a> UsersApi<'a> {
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Users/get_users_by_id>
     pub async fn get(&self, id: UserId) -> Result<User> {
-        let url = self
-            .client
-            .base_url()
-            .join(&format!("api/v2/users/{}", urlencoding::encode(id.as_str())))?;
+        let url = self.client.base_url().join(&format!(
+            "api/v2/users/{}",
+            urlencoding::encode(id.as_str())
+        ))?;
 
         self.client.get(url).await
     }
@@ -227,10 +227,10 @@ impl<'a> UsersApi<'a> {
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Users/patch_users_by_id>
     pub async fn update(&self, id: UserId, request: UpdateUserRequest) -> Result<User> {
-        let url = self
-            .client
-            .base_url()
-            .join(&format!("api/v2/users/{}", urlencoding::encode(id.as_str())))?;
+        let url = self.client.base_url().join(&format!(
+            "api/v2/users/{}",
+            urlencoding::encode(id.as_str())
+        ))?;
 
         self.client.patch(url, &request).await
     }
@@ -257,10 +257,10 @@ impl<'a> UsersApi<'a> {
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Users/delete_users_by_id>
     pub async fn delete(&self, id: UserId) -> Result<()> {
-        let url = self
-            .client
-            .base_url()
-            .join(&format!("api/v2/users/{}", urlencoding::encode(id.as_str())))?;
+        let url = self.client.base_url().join(&format!(
+            "api/v2/users/{}",
+            urlencoding::encode(id.as_str())
+        ))?;
 
         self.client.delete(url).await
     }
@@ -327,10 +327,10 @@ impl<'a> UsersApi<'a> {
         id: UserId,
         params: Option<GetUserLogsParams>,
     ) -> Result<Vec<LogEvent>> {
-        let mut url = self
-            .client
-            .base_url()
-            .join(&format!("api/v2/users/{}/logs", urlencoding::encode(id.as_str())))?;
+        let mut url = self.client.base_url().join(&format!(
+            "api/v2/users/{}/logs",
+            urlencoding::encode(id.as_str())
+        ))?;
 
         if let Some(p) = params {
             let query = serde_urlencoded::to_string(&p)
@@ -363,10 +363,10 @@ impl<'a> UsersApi<'a> {
         id: UserId,
         params: Option<GetUserLogsParams>,
     ) -> Result<LogsPage> {
-        let mut url = self
-            .client
-            .base_url()
-            .join(&format!("api/v2/users/{}/logs", urlencoding::encode(id.as_str())))?;
+        let mut url = self.client.base_url().join(&format!(
+            "api/v2/users/{}/logs",
+            urlencoding::encode(id.as_str())
+        ))?;
 
         let p = params.unwrap_or_default();
         let mut query = serde_urlencoded::to_string(&p)

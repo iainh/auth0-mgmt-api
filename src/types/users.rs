@@ -126,9 +126,9 @@ pub struct UpdateUserRequest {
     pub user_metadata: Option<Metadata>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub app_metadata: Option<Metadata>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde()]
     pub given_name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde()]
     pub family_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,

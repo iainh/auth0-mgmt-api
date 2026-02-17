@@ -191,7 +191,9 @@ async fn test_get_connection_by_id() {
     assert_eq!(connection.strategy, ConnectionStrategy::Auth0Database);
     assert_eq!(connection.is_domain_connection, Some(false));
 
-    let enabled_clients = connection.enabled_clients.expect("Expected enabled_clients");
+    let enabled_clients = connection
+        .enabled_clients
+        .expect("Expected enabled_clients");
     assert_eq!(enabled_clients.len(), 2);
 
     let options = connection.options.expect("Expected options");
@@ -213,7 +215,10 @@ async fn test_get_connection_not_found() {
         .mount(&server)
         .await;
 
-    let result = client.connections().get(ConnectionId::new("con_nonexistent")).await;
+    let result = client
+        .connections()
+        .get(ConnectionId::new("con_nonexistent"))
+        .await;
 
     assert!(result.is_err());
 }
@@ -421,7 +426,9 @@ async fn test_update_connection() {
         Some("Updated Display Name".to_string())
     );
 
-    let enabled_clients = connection.enabled_clients.expect("Expected enabled_clients");
+    let enabled_clients = connection
+        .enabled_clients
+        .expect("Expected enabled_clients");
     assert_eq!(enabled_clients.len(), 2);
 }
 
@@ -480,7 +487,10 @@ async fn test_delete_connection() {
         .mount(&server)
         .await;
 
-    let result = client.connections().delete(ConnectionId::new("con_123")).await;
+    let result = client
+        .connections()
+        .delete(ConnectionId::new("con_123"))
+        .await;
 
     assert!(result.is_ok());
 }
@@ -500,7 +510,10 @@ async fn test_delete_connection_not_found() {
         .mount(&server)
         .await;
 
-    let result = client.connections().delete(ConnectionId::new("con_nonexistent")).await;
+    let result = client
+        .connections()
+        .delete(ConnectionId::new("con_nonexistent"))
+        .await;
 
     assert!(result.is_err());
 }

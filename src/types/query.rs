@@ -83,8 +83,7 @@ impl std::fmt::Display for SortSpec {
 /// Validated page number for pagination.
 ///
 /// Pages are 0-indexed. Only allows values >= 0.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct Page(u32);
 
 impl Page {
@@ -103,7 +102,6 @@ impl Page {
         self.0
     }
 }
-
 
 impl From<u32> for Page {
     fn from(number: u32) -> Self {
@@ -186,7 +184,6 @@ impl SearchEngine {
         }
     }
 }
-
 
 impl std::fmt::Display for SearchEngine {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

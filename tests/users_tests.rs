@@ -322,7 +322,10 @@ async fn test_delete_user_not_found() {
         .mount(&server)
         .await;
 
-    let result = client.users().delete(UserId::new("auth0|nonexistent")).await;
+    let result = client
+        .users()
+        .delete(UserId::new("auth0|nonexistent"))
+        .await;
 
     assert!(result.is_err());
 }
@@ -557,7 +560,10 @@ async fn test_get_user_logs_not_found() {
         .mount(&server)
         .await;
 
-    let result = client.users().get_logs(UserId::new("auth0|nonexistent"), None).await;
+    let result = client
+        .users()
+        .get_logs(UserId::new("auth0|nonexistent"), None)
+        .await;
 
     assert!(result.is_err());
 }

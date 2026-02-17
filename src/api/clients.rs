@@ -1,7 +1,9 @@
 use crate::client::ManagementClient;
 use crate::error::{Auth0Error, Result};
-use crate::types::clients::{Client, ClientsPage, CreateClientRequest, ListClientsParams, UpdateClientRequest};
 use crate::types::ClientId;
+use crate::types::clients::{
+    Client, ClientsPage, CreateClientRequest, ListClientsParams, UpdateClientRequest,
+};
 
 /// API operations for Auth0 Applications (Clients).
 ///
@@ -130,10 +132,10 @@ impl<'a> ClientsApi<'a> {
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Clients/get_clients_by_id>
     pub async fn get(&self, id: ClientId) -> Result<Client> {
-        let url = self
-            .client
-            .base_url()
-            .join(&format!("api/v2/clients/{}", urlencoding::encode(id.as_str())))?;
+        let url = self.client.base_url().join(&format!(
+            "api/v2/clients/{}",
+            urlencoding::encode(id.as_str())
+        ))?;
 
         self.client.get(url).await
     }
@@ -184,10 +186,10 @@ impl<'a> ClientsApi<'a> {
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Clients/patch_clients_by_id>
     pub async fn update(&self, id: ClientId, request: UpdateClientRequest) -> Result<Client> {
-        let url = self
-            .client
-            .base_url()
-            .join(&format!("api/v2/clients/{}", urlencoding::encode(id.as_str())))?;
+        let url = self.client.base_url().join(&format!(
+            "api/v2/clients/{}",
+            urlencoding::encode(id.as_str())
+        ))?;
 
         self.client.patch(url, &request).await
     }
@@ -206,10 +208,10 @@ impl<'a> ClientsApi<'a> {
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Clients/delete_clients_by_id>
     pub async fn delete(&self, id: ClientId) -> Result<()> {
-        let url = self
-            .client
-            .base_url()
-            .join(&format!("api/v2/clients/{}", urlencoding::encode(id.as_str())))?;
+        let url = self.client.base_url().join(&format!(
+            "api/v2/clients/{}",
+            urlencoding::encode(id.as_str())
+        ))?;
 
         self.client.delete(url).await
     }

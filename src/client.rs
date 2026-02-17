@@ -1,6 +1,6 @@
 use reqwest::Client;
 use secrecy::{ExposeSecret, SecretString};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::sync::Arc;
 use tokio::sync::{RwLock, Semaphore};
 use url::Url;
@@ -98,9 +98,11 @@ impl ManagementClient {
             }
         }
 
-        let _permit = self.token_refresh_semaphore.acquire().await.map_err(|_| {
-            Auth0Error::Configuration("Token refresh semaphore closed".into())
-        })?;
+        let _permit = self
+            .token_refresh_semaphore
+            .acquire()
+            .await
+            .map_err(|_| Auth0Error::Configuration("Token refresh semaphore closed".into()))?;
 
         {
             let token = self.token.read().await;
@@ -121,7 +123,9 @@ impl ManagementClient {
                 tokio::time::sleep(delay).await;
                 delay = std::cmp::min(
                     self.retry_config.max_delay,
-                    std::time::Duration::from_secs_f64(delay.as_secs_f64() * self.retry_config.multiplier),
+                    std::time::Duration::from_secs_f64(
+                        delay.as_secs_f64() * self.retry_config.multiplier,
+                    ),
                 );
             }
 
@@ -132,11 +136,18 @@ impl ManagementClient {
                 audience: &self.credentials.audience,
             };
 
-            let result = self.http.post(token_url.clone()).json(&request).send().await;
+            let result = self
+                .http
+                .post(token_url.clone())
+                .json(&request)
+                .send()
+                .await;
 
             let response = match result {
                 Ok(resp) => resp,
-                Err(e) if Self::is_retryable_error(&e) && attempt < self.retry_config.max_retries => {
+                Err(e)
+                    if Self::is_retryable_error(&e) && attempt < self.retry_config.max_retries =>
+                {
                     last_error = Some(Auth0Error::Http(e));
                     continue;
                 }
@@ -159,7 +170,8 @@ impl ManagementClient {
                 return Ok(token_response.access_token);
             }
 
-            if Self::is_retryable_status(status.as_u16()) && attempt < self.retry_config.max_retries {
+            if Self::is_retryable_status(status.as_u16()) && attempt < self.retry_config.max_retries
+            {
                 if status.as_u16() == 429
                     && let Some(retry_after) = response
                         .headers()
@@ -177,7 +189,7 @@ impl ManagementClient {
 
             let error: Auth0ApiError = response.json().await?;
             return Err(Auth0Error::Authentication {
-                message: error.description.unwrap_or(error.message),
+                message: error.message.unwrap_or(error.error.unwrap_or_default()),
             });
         }
 
@@ -196,12 +208,7 @@ impl ManagementClient {
 
     pub(crate) async fn get<T: DeserializeOwned>(&self, url: Url) -> Result<T> {
         let token = self.get_token().await?;
-        let response = self
-            .http
-            .get(url)
-            .bearer_auth(&token)
-            .send()
-            .await?;
+        let response = self.http.get(url).bearer_auth(&token).send().await?;
 
         self.handle_response(response).await
     }
@@ -242,12 +249,7 @@ impl ManagementClient {
 
     pub(crate) async fn delete(&self, url: Url) -> Result<()> {
         let token = self.get_token().await?;
-        let response = self
-            .http
-            .delete(url)
-            .bearer_auth(&token)
-            .send()
-            .await?;
+        let response = self.http.delete(url).bearer_auth(&token).send().await?;
 
         if response.status().is_success() {
             Ok(())
@@ -277,14 +279,14 @@ impl ManagementClient {
         }
 
         let error: Auth0ApiError = response.json().await.unwrap_or(Auth0ApiError {
-            message: "Unknown error".to_string(),
-            description: None,
+            error: Some("Unknown error".into()),
+            message: None,
             error_code: None,
         });
 
         Err(Auth0Error::Api {
             status,
-            message: error.description.unwrap_or(error.message),
+            message: error.message.unwrap_or(error.error.unwrap_or_default()),
             error_code: error.error_code,
         })
     }
@@ -364,9 +366,9 @@ impl ManagementClientBuilder {
             Url::parse(&format!("https://{}/", domain))?
         };
 
-        let audience = self.audience.unwrap_or_else(|| {
-            format!("{}api/v2/", base_url)
-        });
+        let audience = self
+            .audience
+            .unwrap_or_else(|| format!("{}api/v2/", base_url));
 
         let http = Client::builder()
             .user_agent(concat!(

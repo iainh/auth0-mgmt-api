@@ -1,4 +1,7 @@
-use auth0_mgmt_api::{AppType, ClientId, CreateClientRequest, ListClientsParams, ManagementClient, UpdateClientRequest};
+use auth0_mgmt_api::{
+    AppType, ClientId, CreateClientRequest, ListClientsParams, ManagementClient,
+    UpdateClientRequest,
+};
 
 use wiremock::matchers::{bearer_token, body_json, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -208,7 +211,10 @@ async fn test_get_client_not_found() {
         .mount(&server)
         .await;
 
-    let result = client.clients().get(ClientId::new("nonexistent_client")).await;
+    let result = client
+        .clients()
+        .get(ClientId::new("nonexistent_client"))
+        .await;
 
     assert!(result.is_err());
 }
@@ -400,7 +406,10 @@ async fn test_rotate_client_secret_not_found() {
         .mount(&server)
         .await;
 
-    let result = client.clients().rotate_secret(ClientId::new("nonexistent")).await;
+    let result = client
+        .clients()
+        .rotate_secret(ClientId::new("nonexistent"))
+        .await;
 
     assert!(result.is_err());
 }

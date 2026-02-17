@@ -32,10 +32,8 @@ pub type Result<T> = std::result::Result<T, Auth0Error>;
 
 #[derive(Debug, serde::Deserialize)]
 pub(crate) struct Auth0ApiError {
-    #[serde(alias = "error")]
-    pub message: String,
-    #[serde(alias = "error_description")]
-    pub description: Option<String>,
+    pub message: Option<String>,
+    pub error: Option<String>,
     #[serde(rename = "errorCode")]
     pub error_code: Option<String>,
 }

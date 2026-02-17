@@ -1,9 +1,10 @@
 use crate::client::ManagementClient;
 use crate::error::{Auth0Error, Result};
-use crate::types::connections::{
-    Connection, ConnectionsPage, CreateConnectionRequest, ListConnectionsParams, UpdateConnectionRequest,
-};
 use crate::types::ConnectionId;
+use crate::types::connections::{
+    Connection, ConnectionsPage, CreateConnectionRequest, ListConnectionsParams,
+    UpdateConnectionRequest,
+};
 
 /// API operations for Auth0 Connections.
 ///
@@ -92,7 +93,10 @@ impl<'a> ConnectionsApi<'a> {
     /// # Documentation
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Connections/get_connections>
-    pub async fn list_with_totals(&self, params: Option<ListConnectionsParams>) -> Result<ConnectionsPage> {
+    pub async fn list_with_totals(
+        &self,
+        params: Option<ListConnectionsParams>,
+    ) -> Result<ConnectionsPage> {
         let mut url = self.client.base_url().join("api/v2/connections")?;
 
         let p = params.unwrap_or_default();
@@ -130,10 +134,10 @@ impl<'a> ConnectionsApi<'a> {
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Connections/get_connections_by_id>
     pub async fn get(&self, id: ConnectionId) -> Result<Connection> {
-        let url = self
-            .client
-            .base_url()
-            .join(&format!("api/v2/connections/{}", urlencoding::encode(id.as_str())))?;
+        let url = self.client.base_url().join(&format!(
+            "api/v2/connections/{}",
+            urlencoding::encode(id.as_str())
+        ))?;
 
         self.client.get(url).await
     }
@@ -170,11 +174,15 @@ impl<'a> ConnectionsApi<'a> {
     /// # Documentation
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Connections/patch_connections_by_id>
-    pub async fn update(&self, id: ConnectionId, request: UpdateConnectionRequest) -> Result<Connection> {
-        let url = self
-            .client
-            .base_url()
-            .join(&format!("api/v2/connections/{}", urlencoding::encode(id.as_str())))?;
+    pub async fn update(
+        &self,
+        id: ConnectionId,
+        request: UpdateConnectionRequest,
+    ) -> Result<Connection> {
+        let url = self.client.base_url().join(&format!(
+            "api/v2/connections/{}",
+            urlencoding::encode(id.as_str())
+        ))?;
 
         self.client.patch(url, &request).await
     }
@@ -193,10 +201,10 @@ impl<'a> ConnectionsApi<'a> {
     ///
     /// <https://auth0.com/docs/api/management/v2#!/Connections/delete_connections_by_id>
     pub async fn delete(&self, id: ConnectionId) -> Result<()> {
-        let url = self
-            .client
-            .base_url()
-            .join(&format!("api/v2/connections/{}", urlencoding::encode(id.as_str())))?;
+        let url = self.client.base_url().join(&format!(
+            "api/v2/connections/{}",
+            urlencoding::encode(id.as_str())
+        ))?;
 
         self.client.delete(url).await
     }
