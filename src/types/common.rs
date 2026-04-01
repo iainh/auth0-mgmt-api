@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 use serde::{Deserialize, Serialize};
 
 /// Common pagination parameters for list operations.
@@ -24,5 +26,19 @@ pub struct Metadata(pub serde_json::Map<String, serde_json::Value>);
 impl Default for Metadata {
     fn default() -> Self {
         Self(serde_json::Map::new())
+    }
+}
+
+impl Deref for Metadata {
+    type Target = serde_json::Map<String, serde_json::Value>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Metadata {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
