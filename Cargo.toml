@@ -1,6 +1,6 @@
 [package]
 name = "auth0-mgmt-api"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "Rust client library for the Auth0 Management API v2"
 license = "MIT OR Apache-2.0"
@@ -9,7 +9,7 @@ keywords = ["auth0", "authentication", "identity", "api"]
 categories = ["authentication", "web-programming"]
 
 [dependencies]
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.13", default-features = false, features = ["json"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -24,8 +24,10 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 wiremock = "0.6"
 
 [features]
-default = ["users", "clients", "connections", "logs"]
+default = ["users", "clients", "connections", "logs", "rustls"]
 users = []
 clients = []
 connections = []
 logs = []
+rustls = ["reqwest/rustls"]
+native-tls = ["reqwest/native-tls"]

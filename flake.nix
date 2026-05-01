@@ -45,6 +45,7 @@
           ++ lib.optionals (!stdenv.isDarwin) [
             # Linker
             mold-wrapped
+            openssl
           ]
           # Section added only on Darwin (macOS) systems
           ++ lib.optionals stdenv.isDarwin [
