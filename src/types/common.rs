@@ -42,3 +42,33 @@ impl DerefMut for Metadata {
         &mut self.0
     }
 }
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize)]
+pub enum Patch<T> {
+    #[default]
+    Unset,
+    Null,
+    Value(T),
+}
+
+impl<'de, T> Deserialize<'de> for Patch<T>
+where
+    T: Deserialize<'de>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        // Use Option<T> to capture the difference between a value and null
+        Option::<T>::deserialize(deserializer).map(|opt| match opt {
+            Some(val) => Patch::Value(val),
+            None => Patch::Null,
+        })
+    }
+}
+
+impl<T> Patch<T> {
+    pub fn is_unset(&self) -> bool {
+        matches!(self, Patch::Unset)
+    }
+}

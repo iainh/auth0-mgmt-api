@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::Metadata;
+use super::{Metadata, Patch};
 
 /// Represents an Auth0 user.
 ///
@@ -126,10 +126,10 @@ pub struct UpdateUserRequest {
     pub user_metadata: Option<Metadata>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub app_metadata: Option<Metadata>,
-    #[serde()]
-    pub given_name: Option<String>,
-    #[serde()]
-    pub family_name: Option<String>,
+    #[serde(skip_serializing_if = "Patch::is_unset")]
+    pub given_name: Patch<String>,
+    #[serde(skip_serializing_if = "Patch::is_unset")]
+    pub family_name: Patch<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
