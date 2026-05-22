@@ -59,13 +59,29 @@ By default, all API resources are enabled. You can disable them to reduce compil
 
 ```toml
 [dependencies]
-auth0-mgmt-api = { version = "0.1", default-features = false, features = ["users"] }
+auth0-mgmt-api = { version = "0.2", default-features = false, features = ["users"] }
 ```
 
 Available features:
 - `users` - Users API
 - `clients` - Applications/Clients API  
 - `connections` - Connections API
+- `logs` - Logs API
+- `rustls` - Use the rustls TLS backend with platform certificate verification
+- `native-tls` - Use the platform-native TLS backend
+- `rustls-native-certs` - Alias for `rustls` for projects that explicitly want rustls with platform certificate verification
+
+To use rustls with platform certificate verification, enable the `rustls`
+feature. The `rustls-native-certs` feature is also available as an alias for
+this configuration:
+
+```toml
+[dependencies]
+auth0-mgmt-api = { version = "0.2", default-features = false, features = ["users", "rustls-native-certs"] }
+```
+
+This keeps the rustls TLS backend while using reqwest's rustls platform
+verifier, which supports operating-system-managed certificate authorities.
 
 ## Auth0 Setup
 
