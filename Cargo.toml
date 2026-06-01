@@ -1,6 +1,6 @@
 [package]
 name = "auth0-mgmt-api"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 description = "Rust client library for the Auth0 Management API v2"
 license = "MIT OR Apache-2.0"
