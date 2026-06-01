@@ -43,12 +43,27 @@ impl DerefMut for Metadata {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub enum Patch<T> {
     #[default]
     Unset,
     Null,
     Value(T),
+}
+
+impl<T> Serialize for Patch<T>
+where
+    T: Serialize,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            Patch::Unset | Patch::Null => serializer.serialize_none(),
+            Patch::Value(value) => value.serialize(serializer),
+        }
+    }
 }
 
 impl<'de, T> Deserialize<'de> for Patch<T>

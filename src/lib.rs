@@ -7,8 +7,8 @@ pub use client::{ManagementClient, ManagementClientBuilder, RetryConfig};
 pub use error::{Auth0Error, Result};
 pub use types::{
     AppType, ClientId, ConnectionId, ConnectionStrategy, GrantType, LogEventType,
-    OrganizationRequireBehavior, OrganizationUsage, Page, PerPage, SearchEngine, SortDirection,
-    SortSpec, TokenAuthMethod, UserId,
+    OrganizationRequireBehavior, OrganizationUsage, Page, Patch, PerPage, SearchEngine,
+    SortDirection, SortSpec, TokenAuthMethod, UserId,
 };
 
 #[cfg(feature = "users")]

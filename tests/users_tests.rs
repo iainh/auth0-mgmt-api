@@ -1,6 +1,6 @@
 use auth0_mgmt_api::{
-    CreateUserRequest, GetUserLogsParams, ListUsersParams, ManagementClient, UpdateUserRequest,
-    UserId,
+    CreateUserRequest, GetUserLogsParams, ListUsersParams, ManagementClient, Patch,
+    UpdateUserRequest, UserId,
 };
 use wiremock::matchers::{bearer_token, body_json, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -289,6 +289,98 @@ async fn test_update_user() {
 
     assert_eq!(user.email, Some("updated@example.com".to_string()));
     assert_eq!(user.name, Some("Updated User".to_string()));
+}
+
+#[tokio::test]
+async fn test_update_user_given_and_family_name() {
+    let (server, client) = setup_mock_server().await;
+
+    let user_response = serde_json::json!({
+        "user_id": "auth0|123456789",
+        "email": "updated@example.com",
+        "given_name": "Updated",
+        "family_name": "User"
+    });
+
+    let request = UpdateUserRequest {
+        given_name: Patch::Value("Updated".to_string()),
+        family_name: Patch::Value("User".to_string()),
+        ..Default::default()
+    };
+
+    Mock::given(method("PATCH"))
+        .and(path("/api/v2/users/auth0%7C123456789"))
+        .and(bearer_token("test_token"))
+        .and(body_json(serde_json::json!({
+            "given_name": "Updated",
+            "family_name": "User"
+        })))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&user_response))
+        .mount(&server)
+        .await;
+
+    let user = client
+        .users()
+        .update(UserId::new("auth0|123456789"), request)
+        .await
+        .expect("Failed to update user");
+
+    assert_eq!(user.given_name, Some("Updated".to_string()));
+    assert_eq!(user.family_name, Some("User".to_string()));
+}
+
+#[tokio::test]
+async fn test_update_user_can_clear_given_name() {
+    let (server, client) = setup_mock_server().await;
+
+    let user_response = serde_json::json!({
+        "user_id": "auth0|123456789",
+        "email": "updated@example.com",
+        "given_name": null
+    });
+
+    let request = UpdateUserRequest {
+        given_name: Patch::Null,
+        ..Default::default()
+    };
+
+    Mock::given(method("PATCH"))
+        .and(path("/api/v2/users/auth0%7C123456789"))
+        .and(bearer_token("test_token"))
+        .and(body_json(serde_json::json!({
+            "given_name": null
+        })))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&user_response))
+        .mount(&server)
+        .await;
+
+    let user = client
+        .users()
+        .update(UserId::new("auth0|123456789"), request)
+        .await
+        .expect("Failed to update user");
+
+    assert_eq!(user.given_name, None);
+}
+
+#[test]
+fn test_update_user_patch_fields_omit_unset_but_include_null() {
+    let request = UpdateUserRequest {
+        given_name: Patch::Unset,
+        family_name: Patch::Null,
+        name: Some("Updated User".to_string()),
+        ..Default::default()
+    };
+
+    let body = serde_json::to_value(request).expect("Failed to serialize update request");
+
+    assert_eq!(
+        body,
+        serde_json::json!({
+            "family_name": null,
+            "name": "Updated User"
+        })
+    );
 }
 
 #[tokio::test]
