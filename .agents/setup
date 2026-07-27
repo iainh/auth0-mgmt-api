@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+echo "Installing the Rust toolchain..."
+if [[ ! -x "$HOME/.cargo/bin/rustup" ]]; then
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |
+    sh -s -- -y --profile minimal --default-toolchain stable
+fi
+
+# The installer cannot update this script's environment.
+# shellcheck disable=SC1091
+source "$HOME/.cargo/env"
+rustup toolchain install stable --profile minimal --component clippy --component rustfmt
+rustup default stable
+
+profile_marker="# auth0-mgmt-api Rust toolchain"
+if ! grep -Fqx "$profile_marker" "$HOME/.bash_profile" 2>/dev/null; then
+  cat >> "$HOME/.bash_profile" <<'EOF'
+
+# auth0-mgmt-api Rust toolchain
+if [[ -f "$HOME/.cargo/env" ]]; then
+  source "$HOME/.cargo/env"
+fi
+EOF
+fi
+
+echo "Fetching locked Cargo dependencies..."
+cargo fetch --locked --manifest-path "$repo_root/Cargo.toml"
+
+echo "Orb setup complete."
