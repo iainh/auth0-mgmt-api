@@ -1,9 +1,11 @@
 use crate::client::ManagementClient;
 use crate::error::{Auth0Error, Result};
-use crate::types::ClientId;
 use crate::types::clients::{
-    Client, ClientsPage, CreateClientRequest, ListClientsParams, UpdateClientRequest,
+    Client, ClientConnectionsPage, ClientCredential, ClientsPage, CreateClientCredentialRequest,
+    CreateClientRequest, ListClientConnectionsParams, ListClientsParams,
+    UpdateClientCredentialRequest, UpdateClientRequest,
 };
+use crate::types::{ClientCredentialId, ClientId};
 
 /// API operations for Auth0 Applications (Clients).
 ///
@@ -244,5 +246,143 @@ impl<'a> ClientsApi<'a> {
         ))?;
 
         self.client.post(url, &()).await
+    }
+
+    /// List public-key credentials configured for a client.
+    ///
+    /// Requires the `read:client_credentials` scope.
+    ///
+    /// # Documentation
+    ///
+    /// <https://auth0.com/docs/api/management/v2/clients/get-credentials>
+    pub async fn list_credentials(&self, id: ClientId) -> Result<Vec<ClientCredential>> {
+        let url = self.client.base_url().join(&format!(
+            "api/v2/clients/{}/credentials",
+            urlencoding::encode(id.as_str())
+        ))?;
+        self.client.get(url).await
+    }
+
+    /// Get one public-key credential configured for a client.
+    ///
+    /// Requires the `read:client_credentials` scope.
+    ///
+    /// # Documentation
+    ///
+    /// <https://auth0.com/docs/api/management/v2/clients/get-credentials-by-credential-id>
+    pub async fn get_credential(
+        &self,
+        client_id: ClientId,
+        credential_id: ClientCredentialId,
+    ) -> Result<ClientCredential> {
+        let url = self.client.base_url().join(&format!(
+            "api/v2/clients/{}/credentials/{}",
+            urlencoding::encode(client_id.as_str()),
+            urlencoding::encode(credential_id.as_str())
+        ))?;
+        self.client.get(url).await
+    }
+
+    /// Create a public-key credential for a client.
+    ///
+    /// Requires the `create:client_credentials` scope.
+    ///
+    /// # Documentation
+    ///
+    /// <https://auth0.com/docs/api/management/v2/clients/post-credentials>
+    pub async fn create_credential(
+        &self,
+        id: ClientId,
+        request: CreateClientCredentialRequest,
+    ) -> Result<ClientCredential> {
+        let url = self.client.base_url().join(&format!(
+            "api/v2/clients/{}/credentials",
+            urlencoding::encode(id.as_str())
+        ))?;
+        self.client.post(url, &request).await
+    }
+
+    /// Update a client credential's expiration.
+    ///
+    /// Requires the `update:client_credentials` scope.
+    ///
+    /// # Documentation
+    ///
+    /// <https://auth0.com/docs/api/management/v2/clients/patch-credentials-by-credential-id>
+    pub async fn update_credential(
+        &self,
+        client_id: ClientId,
+        credential_id: ClientCredentialId,
+        request: UpdateClientCredentialRequest,
+    ) -> Result<ClientCredential> {
+        let url = self.client.base_url().join(&format!(
+            "api/v2/clients/{}/credentials/{}",
+            urlencoding::encode(client_id.as_str()),
+            urlencoding::encode(credential_id.as_str())
+        ))?;
+        self.client.patch(url, &request).await
+    }
+
+    /// Delete a public-key credential from a client.
+    ///
+    /// Requires the `delete:client_credentials` scope.
+    ///
+    /// # Documentation
+    ///
+    /// <https://auth0.com/docs/api/management/v2/clients/delete-credentials-by-credential-id>
+    pub async fn delete_credential(
+        &self,
+        client_id: ClientId,
+        credential_id: ClientCredentialId,
+    ) -> Result<()> {
+        let url = self.client.base_url().join(&format!(
+            "api/v2/clients/{}/credentials/{}",
+            urlencoding::encode(client_id.as_str()),
+            urlencoding::encode(credential_id.as_str())
+        ))?;
+        self.client.delete(url).await
+    }
+
+    /// List connections enabled for a client using checkpoint pagination.
+    ///
+    /// Requires `read:connections` and either `read:clients` or
+    /// `read:client_summary`. Pass a returned `next` token as `from` to fetch
+    /// the following page.
+    ///
+    /// # Documentation
+    ///
+    /// <https://auth0.com/docs/api/management/v2/clients/get-client-connections>
+    pub async fn list_connections(
+        &self,
+        id: ClientId,
+        params: Option<ListClientConnectionsParams>,
+    ) -> Result<ClientConnectionsPage> {
+        let mut url = self.client.base_url().join(&format!(
+            "api/v2/clients/{}/connections",
+            urlencoding::encode(id.as_str())
+        ))?;
+
+        if let Some(params) = params {
+            let mut query = url.query_pairs_mut();
+            if let Some(strategies) = params.strategy {
+                for strategy in strategies {
+                    query.append_pair("strategy", &strategy);
+                }
+            }
+            if let Some(from) = params.from {
+                query.append_pair("from", &from);
+            }
+            if let Some(take) = params.take {
+                query.append_pair("take", &take.to_string());
+            }
+            if let Some(fields) = params.fields {
+                query.append_pair("fields", &fields);
+            }
+            if let Some(include_fields) = params.include_fields {
+                query.append_pair("include_fields", &include_fields.to_string());
+            }
+        }
+
+        self.client.get(url).await
     }
 }

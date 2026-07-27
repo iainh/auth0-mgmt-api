@@ -215,6 +215,7 @@ impl ManagementClient {
         self.handle_response(response).await
     }
 
+    #[cfg(feature = "jobs")]
     pub(crate) async fn get_optional<T: DeserializeOwned>(&self, url: Url) -> Result<Option<T>> {
         let token = self.get_token().await?;
         let response = self.http.get(url).bearer_auth(&token).send().await?;
@@ -243,6 +244,7 @@ impl ManagementClient {
         self.handle_response(response).await
     }
 
+    #[cfg(feature = "jobs")]
     pub(crate) async fn post_multipart<T: DeserializeOwned>(
         &self,
         url: Url,

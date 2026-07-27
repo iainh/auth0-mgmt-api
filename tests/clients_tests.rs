@@ -1,6 +1,7 @@
 use auth0_mgmt_api::{
-    AppType, ClientId, CreateClientRequest, ListClientsParams, ManagementClient,
-    UpdateClientRequest,
+    AppType, ClientCredentialAlgorithm, ClientCredentialId, ClientCredentialType, ClientId,
+    CreateClientCredentialRequest, CreateClientRequest, ListClientConnectionsParams,
+    ListClientsParams, ManagementClient, Patch, UpdateClientCredentialRequest, UpdateClientRequest,
 };
 
 use wiremock::matchers::{bearer_token, body_json, method, path, query_param};
@@ -494,4 +495,214 @@ async fn test_get_client_with_special_characters_in_id() {
         .expect("Failed to get client with special characters");
 
     assert_eq!(app.client_id, "client/with/slashes");
+}
+
+#[tokio::test]
+async fn test_list_client_credentials() {
+    let (server, client) = setup_mock_server().await;
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/clients/client_123/credentials"))
+        .and(bearer_token("test_token"))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(serde_json::json!([{
+                "id": "cred_123",
+                "name": "Production signing key",
+                "kid": "key-id-12345",
+                "alg": "RS256",
+                "credential_type": "public_key",
+                "created_at": "2026-07-27T12:00:00.000Z"
+            }])),
+        )
+        .mount(&server)
+        .await;
+
+    let credentials = client
+        .clients()
+        .list_credentials(ClientId::new("client_123"))
+        .await
+        .expect("Failed to list client credentials");
+
+    assert_eq!(credentials.len(), 1);
+    assert_eq!(credentials[0].id.as_deref(), Some("cred_123"));
+    assert_eq!(
+        credentials[0].credential_type,
+        Some(ClientCredentialType::PublicKey)
+    );
+}
+
+#[tokio::test]
+async fn test_get_client_credential_with_encoded_ids() {
+    let (server, client) = setup_mock_server().await;
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/clients/client%2F123/credentials/cred%2F456"))
+        .and(bearer_token("test_token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "id": "cred/456",
+            "alg": "PS256",
+            "credential_type": "x509_cert",
+            "thumbprint_sha256": "thumbprint"
+        })))
+        .mount(&server)
+        .await;
+
+    let credential = client
+        .clients()
+        .get_credential(
+            ClientId::new("client/123"),
+            ClientCredentialId::new("cred/456"),
+        )
+        .await
+        .expect("Failed to get client credential");
+
+    assert_eq!(credential.id.as_deref(), Some("cred/456"));
+    assert_eq!(credential.alg, Some(ClientCredentialAlgorithm::PS256));
+}
+
+#[tokio::test]
+async fn test_create_client_credential() {
+    let (server, client) = setup_mock_server().await;
+    let pem = "-----BEGIN PUBLIC KEY-----\nkey-data\n-----END PUBLIC KEY-----";
+
+    Mock::given(method("POST"))
+        .and(path("/api/v2/clients/client_123/credentials"))
+        .and(bearer_token("test_token"))
+        .and(body_json(serde_json::json!({
+            "credential_type": "public_key",
+            "name": "Production signing key",
+            "pem": pem,
+            "alg": "RS384",
+            "parse_expiry_from_cert": false,
+            "expires_at": "2027-07-27T12:00:00.000Z",
+            "kid": "key-id-12345"
+        })))
+        .respond_with(ResponseTemplate::new(201).set_body_json(serde_json::json!({
+            "id": "cred_new",
+            "name": "Production signing key",
+            "kid": "key-id-12345",
+            "alg": "RS384",
+            "credential_type": "public_key",
+            "expires_at": "2027-07-27T12:00:00.000Z"
+        })))
+        .mount(&server)
+        .await;
+
+    let credential = client
+        .clients()
+        .create_credential(
+            ClientId::new("client_123"),
+            CreateClientCredentialRequest {
+                credential_type: ClientCredentialType::PublicKey,
+                name: Some("Production signing key".to_string()),
+                subject_dn: None,
+                pem: Some(pem.to_string()),
+                alg: Some(ClientCredentialAlgorithm::RS384),
+                parse_expiry_from_cert: Some(false),
+                expires_at: Some("2027-07-27T12:00:00.000Z".to_string()),
+                kid: Some("key-id-12345".to_string()),
+            },
+        )
+        .await
+        .expect("Failed to create client credential");
+
+    assert_eq!(credential.id.as_deref(), Some("cred_new"));
+}
+
+#[tokio::test]
+async fn test_update_client_credential_can_clear_expiration() {
+    let (server, client) = setup_mock_server().await;
+
+    Mock::given(method("PATCH"))
+        .and(path("/api/v2/clients/client_123/credentials/cred_123"))
+        .and(bearer_token("test_token"))
+        .and(body_json(serde_json::json!({ "expires_at": null })))
+        .respond_with(ResponseTemplate::new(201).set_body_json(serde_json::json!({
+            "id": "cred_123",
+            "alg": "RS256",
+            "credential_type": "public_key"
+        })))
+        .mount(&server)
+        .await;
+
+    let credential = client
+        .clients()
+        .update_credential(
+            ClientId::new("client_123"),
+            ClientCredentialId::new("cred_123"),
+            UpdateClientCredentialRequest {
+                expires_at: Patch::Null,
+            },
+        )
+        .await
+        .expect("Failed to update client credential");
+
+    assert_eq!(credential.id.as_deref(), Some("cred_123"));
+    assert_eq!(credential.expires_at, None);
+}
+
+#[tokio::test]
+async fn test_delete_client_credential() {
+    let (server, client) = setup_mock_server().await;
+
+    Mock::given(method("DELETE"))
+        .and(path("/api/v2/clients/client_123/credentials/cred_123"))
+        .and(bearer_token("test_token"))
+        .respond_with(ResponseTemplate::new(204))
+        .mount(&server)
+        .await;
+
+    client
+        .clients()
+        .delete_credential(
+            ClientId::new("client_123"),
+            ClientCredentialId::new("cred_123"),
+        )
+        .await
+        .expect("Failed to delete client credential");
+}
+
+#[tokio::test]
+async fn test_list_connections_enabled_for_client() {
+    let (server, client) = setup_mock_server().await;
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/clients/client_123/connections"))
+        .and(query_param("strategy", "auth0"))
+        .and(query_param("strategy", "google-oauth2"))
+        .and(query_param("from", "checkpoint/token"))
+        .and(query_param("take", "25"))
+        .and(query_param("fields", "id,name,strategy"))
+        .and(query_param("include_fields", "true"))
+        .and(bearer_token("test_token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "connections": [{
+                "id": "con_123",
+                "name": "Username-Password-Authentication",
+                "strategy": "auth0",
+                "authentication": { "active": true }
+            }],
+            "next": "next-checkpoint"
+        })))
+        .mount(&server)
+        .await;
+
+    let page = client
+        .clients()
+        .list_connections(
+            ClientId::new("client_123"),
+            Some(ListClientConnectionsParams {
+                strategy: Some(vec!["auth0".to_string(), "google-oauth2".to_string()]),
+                from: Some("checkpoint/token".to_string()),
+                take: Some(25),
+                fields: Some("id,name,strategy".to_string()),
+                include_fields: Some(true),
+            }),
+        )
+        .await
+        .expect("Failed to list enabled connections");
+
+    assert_eq!(page.connections.len(), 1);
+    assert_eq!(page.connections[0].id.as_deref(), Some("con_123"));
+    assert_eq!(page.next.as_deref(), Some("next-checkpoint"));
 }

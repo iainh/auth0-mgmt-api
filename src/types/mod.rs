@@ -21,5 +21,5 @@ pub mod common;
 
 pub use common::*;
 pub use enums::*;
-pub use ids::{ClientId, ConnectionId, JobId, UserId};
+pub use ids::{ClientCredentialId, ClientId, ConnectionId, JobId, UserId};
 pub use query::{Page, PerPage, SearchEngine, SortDirection, SortSpec};

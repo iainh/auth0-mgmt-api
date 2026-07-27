@@ -221,3 +221,58 @@ impl Deref for JobId {
         &self.0
     }
 }
+
+/// Strongly-typed client credential identifier.
+///
+/// Prevents accidental confusion with the client that owns the credential.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ClientCredentialId(String);
+
+impl ClientCredentialId {
+    /// Create a new client credential ID.
+    pub fn new(id: impl Into<String>) -> Self {
+        Self(id.into())
+    }
+
+    /// Get the client credential ID as a string.
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+
+    /// Convert into the inner string.
+    pub fn into_inner(self) -> String {
+        self.0
+    }
+}
+
+impl fmt::Display for ClientCredentialId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<String> for ClientCredentialId {
+    fn from(id: String) -> Self {
+        Self(id)
+    }
+}
+
+impl From<&str> for ClientCredentialId {
+    fn from(id: &str) -> Self {
+        Self(id.to_string())
+    }
+}
+
+impl AsRef<str> for ClientCredentialId {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl Deref for ClientCredentialId {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        &self.0
+    }
+}

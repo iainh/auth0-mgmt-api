@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use super::Patch;
 use super::enums::{
     AppType, GrantType, OrganizationRequireBehavior, OrganizationUsage, TokenAuthMethod,
 };
@@ -175,6 +176,118 @@ pub struct ListClientsParams {
     pub is_first_party: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub app_type: Option<AppType>,
+}
+
+/// Algorithm used to verify assertions made with a client credential.
+///
+/// See the [Auth0 Client Credentials documentation](https://auth0.com/docs/api/management/v2/clients/get-credentials).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ClientCredentialAlgorithm {
+    RS256,
+    RS384,
+    PS256,
+}
+
+/// Type of public-key credential configured for a client.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ClientCredentialType {
+    PublicKey,
+    CertSubjectDn,
+    X509Cert,
+}
+
+/// A public-key credential configured for an Auth0 client.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ClientCredential {
+    pub id: Option<String>,
+    pub name: Option<String>,
+    pub kid: Option<String>,
+    pub alg: Option<ClientCredentialAlgorithm>,
+    pub credential_type: Option<ClientCredentialType>,
+    pub subject_dn: Option<String>,
+    pub thumbprint_sha256: Option<String>,
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
+    pub expires_at: Option<String>,
+}
+
+/// Request payload for creating a client credential.
+///
+/// `subject_dn` and `pem` are mutually exclusive. Their applicability depends
+/// on `credential_type`; see Auth0's endpoint documentation for the accepted
+/// combinations.
+///
+/// See the [Auth0 Create Client Credential documentation](https://auth0.com/docs/api/management/v2/clients/post-credentials).
+#[derive(Debug, Clone, Serialize)]
+pub struct CreateClientCredentialRequest {
+    pub credential_type: ClientCredentialType,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub subject_dn: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pem: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub alg: Option<ClientCredentialAlgorithm>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parse_expiry_from_cert: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expires_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kid: Option<String>,
+}
+
+/// Request payload for changing a client credential's expiration.
+///
+/// Use [`Patch::Null`] to remove the expiration or [`Patch::Value`] to set it.
+///
+/// See the [Auth0 Update Client Credential documentation](https://auth0.com/docs/api/management/v2/clients/patch-credentials-by-credential-id).
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct UpdateClientCredentialRequest {
+    #[serde(skip_serializing_if = "Patch::is_unset")]
+    pub expires_at: Patch<String>,
+}
+
+/// Query parameters for connections enabled for a client.
+///
+/// `strategy` values are serialized as repeated query parameters as defined by
+/// OpenAPI's form/explode array encoding.
+#[derive(Debug, Clone, Default)]
+pub struct ListClientConnectionsParams {
+    pub strategy: Option<Vec<String>>,
+    pub from: Option<String>,
+    pub take: Option<u32>,
+    pub fields: Option<String>,
+    pub include_fields: Option<bool>,
+}
+
+/// A connection enabled for a client.
+///
+/// Strategy is intentionally a string because Auth0 supports substantially
+/// more strategies here than the connection-creation API.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ClientConnection {
+    pub id: Option<String>,
+    pub name: Option<String>,
+    pub display_name: Option<String>,
+    pub strategy: Option<String>,
+    pub realms: Option<Vec<String>>,
+    pub is_domain_connection: Option<bool>,
+    pub show_as_button: Option<bool>,
+    pub options: Option<serde_json::Value>,
+    pub metadata: Option<serde_json::Value>,
+    pub authentication: Option<serde_json::Value>,
+    pub connected_accounts: Option<serde_json::Value>,
+    pub cross_app_access_requesting_app: Option<serde_json::Value>,
+    pub cross_app_access_resource_app: Option<serde_json::Value>,
+}
+
+/// Checkpoint-paginated connections enabled for a client.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ClientConnectionsPage {
+    pub connections: Vec<ClientConnection>,
+    pub next: Option<String>,
 }
 
 /// Paginated response for client list operations.
