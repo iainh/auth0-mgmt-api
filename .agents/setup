@@ -3,6 +3,10 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+echo "Configuring the repository Git identity..."
+git -C "$repo_root" config user.name "Iain H"
+git -C "$repo_root" config user.email "iain@spiralpoint.org"
+
 echo "Installing the Rust toolchain..."
 if [[ ! -x "$HOME/.cargo/bin/rustup" ]]; then
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |
