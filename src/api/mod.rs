@@ -7,5 +7,8 @@ pub mod clients;
 #[cfg(feature = "connections")]
 pub mod connections;
 
+#[cfg(feature = "jobs")]
+pub mod jobs;
+
 #[cfg(feature = "logs")]
 pub mod logs;

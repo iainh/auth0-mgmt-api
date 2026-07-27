@@ -11,6 +11,8 @@ use crate::error::{Auth0ApiError, Auth0Error, Result};
 use crate::api::clients::ClientsApi;
 #[cfg(feature = "connections")]
 use crate::api::connections::ConnectionsApi;
+#[cfg(feature = "jobs")]
+use crate::api::jobs::JobsApi;
 #[cfg(feature = "logs")]
 use crate::api::logs::LogsApi;
 #[cfg(feature = "users")]
@@ -213,6 +215,17 @@ impl ManagementClient {
         self.handle_response(response).await
     }
 
+    pub(crate) async fn get_optional<T: DeserializeOwned>(&self, url: Url) -> Result<Option<T>> {
+        let token = self.get_token().await?;
+        let response = self.http.get(url).bearer_auth(&token).send().await?;
+
+        if response.status() == reqwest::StatusCode::NO_CONTENT {
+            Ok(None)
+        } else {
+            self.handle_response(response).await.map(Some)
+        }
+    }
+
     pub(crate) async fn post<T: DeserializeOwned, B: Serialize>(
         &self,
         url: Url,
@@ -230,6 +243,24 @@ impl ManagementClient {
         self.handle_response(response).await
     }
 
+    pub(crate) async fn post_multipart<T: DeserializeOwned>(
+        &self,
+        url: Url,
+        form: reqwest::multipart::Form,
+    ) -> Result<T> {
+        let token = self.get_token().await?;
+        let response = self
+            .http
+            .post(url)
+            .bearer_auth(&token)
+            .multipart(form)
+            .send()
+            .await?;
+
+        self.handle_response(response).await
+    }
+
+    #[cfg(any(feature = "clients", feature = "connections", feature = "users"))]
     pub(crate) async fn patch<T: DeserializeOwned, B: Serialize>(
         &self,
         url: Url,
@@ -247,6 +278,7 @@ impl ManagementClient {
         self.handle_response(response).await
     }
 
+    #[cfg(feature = "connections")]
     pub(crate) async fn patch_empty<B: Serialize>(&self, url: Url, body: &B) -> Result<()> {
         let token = self.get_token().await?;
         let response = self
@@ -264,6 +296,7 @@ impl ManagementClient {
         }
     }
 
+    #[cfg(any(feature = "clients", feature = "connections", feature = "users"))]
     pub(crate) async fn delete(&self, url: Url) -> Result<()> {
         let token = self.get_token().await?;
         let response = self.http.delete(url).bearer_auth(&token).send().await?;
@@ -321,6 +354,11 @@ impl ManagementClient {
     #[cfg(feature = "connections")]
     pub fn connections(&self) -> ConnectionsApi<'_> {
         ConnectionsApi::new(self)
+    }
+
+    #[cfg(feature = "jobs")]
+    pub fn jobs(&self) -> JobsApi<'_> {
+        JobsApi::new(self)
     }
 
     #[cfg(feature = "logs")]

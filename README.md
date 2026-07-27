@@ -66,6 +66,7 @@ Available features:
 - `users` - Users API
 - `clients` - Applications/Clients API  
 - `connections` - Connections API
+- `jobs` - Asynchronous jobs API, including bulk user imports and exports
 - `logs` - Logs API
 - `rustls` - Use the rustls TLS backend with platform certificate verification
 - `native-tls` - Use the platform-native TLS backend

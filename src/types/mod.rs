@@ -11,6 +11,9 @@ pub mod clients;
 #[cfg(feature = "connections")]
 pub mod connections;
 
+#[cfg(feature = "jobs")]
+pub mod jobs;
+
 #[cfg(feature = "logs")]
 pub mod logs;
 
@@ -18,5 +21,5 @@ pub mod common;
 
 pub use common::*;
 pub use enums::*;
-pub use ids::{ClientId, ConnectionId, UserId};
+pub use ids::{ClientId, ConnectionId, JobId, UserId};
 pub use query::{Page, PerPage, SearchEngine, SortDirection, SortSpec};

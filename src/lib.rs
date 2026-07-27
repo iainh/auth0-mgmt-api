@@ -6,7 +6,7 @@ pub mod types;
 pub use client::{ManagementClient, ManagementClientBuilder, RetryConfig};
 pub use error::{Auth0Error, Result};
 pub use types::{
-    AppType, ClientId, ConnectionId, ConnectionStrategy, GrantType, LogEventType,
+    AppType, ClientId, ConnectionId, ConnectionStrategy, GrantType, JobId, LogEventType,
     OrganizationRequireBehavior, OrganizationUsage, Page, Patch, PerPage, SearchEngine,
     SortDirection, SortSpec, TokenAuthMethod, UserId,
 };
@@ -19,6 +19,9 @@ pub use types::clients::*;
 
 #[cfg(feature = "connections")]
 pub use types::connections::*;
+
+#[cfg(feature = "jobs")]
+pub use types::jobs::*;
 
 #[cfg(feature = "logs")]
 pub use types::logs::*;

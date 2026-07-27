@@ -9,7 +9,7 @@ keywords = ["auth0", "authentication", "identity", "api"]
 categories = ["authentication", "web-programming"]
 
 [dependencies]
-reqwest = { version = "0.13", default-features = false, features = ["json"] }
+reqwest = { version = "0.13", default-features = false, features = ["json", "multipart"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -24,10 +24,11 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 wiremock = "0.6"
 
 [features]
-default = ["users", "clients", "connections", "logs", "rustls"]
+default = ["users", "clients", "connections", "jobs", "logs", "rustls"]
 users = []
 clients = []
 connections = []
+jobs = []
 logs = []
 rustls = ["reqwest/rustls"]
 native-tls = ["reqwest/native-tls"]

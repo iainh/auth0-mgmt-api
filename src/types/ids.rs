@@ -166,3 +166,58 @@ impl Deref for ConnectionId {
         &self.0
     }
 }
+
+/// Strongly-typed asynchronous job identifier.
+///
+/// Prevents accidental confusion with user, client, and connection identifiers.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct JobId(String);
+
+impl JobId {
+    /// Create a new job ID.
+    pub fn new(id: impl Into<String>) -> Self {
+        Self(id.into())
+    }
+
+    /// Get the job ID as a string.
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+
+    /// Convert into the inner string.
+    pub fn into_inner(self) -> String {
+        self.0
+    }
+}
+
+impl fmt::Display for JobId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<String> for JobId {
+    fn from(id: String) -> Self {
+        Self(id)
+    }
+}
+
+impl From<&str> for JobId {
+    fn from(id: &str) -> Self {
+        Self(id.to_string())
+    }
+}
+
+impl AsRef<str> for JobId {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl Deref for JobId {
+    type Target = str;
+
+    fn deref(&self) -> &str {
+        &self.0
+    }
+}
