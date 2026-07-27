@@ -67,8 +67,11 @@ async fn test_list_logs() {
         "90020211201185132572079310688835925971249535794074878050"
     );
     assert_eq!(logs[0].event_type, "s");
+    assert_eq!(logs[0].event_name(), "Success Login");
+    assert_eq!(logs[0].readable_description(), "Successful login");
     assert_eq!(logs[0].user_name, Some("test@example.com".to_string()));
     assert_eq!(logs[1].event_type, "f");
+    assert_eq!(logs[1].event_name(), "Failed Login");
 }
 
 #[tokio::test]
@@ -220,4 +223,41 @@ async fn test_get_log_with_url_encoded_id() {
         .expect("Failed to get log with special characters");
 
     assert_eq!(log.log_id, "log/with/slashes");
+}
+
+#[tokio::test]
+async fn test_log_event_names_fall_back_safely() {
+    let (server, client) = setup_mock_server().await;
+
+    let logs_response = serde_json::json!([
+        {
+            "log_id": "known_event",
+            "type": "gd_auth_failed"
+        },
+        {
+            "log_id": "known_event_with_empty_description",
+            "type": "sapi",
+            "description": "  "
+        },
+        {
+            "log_id": "future_event",
+            "type": "new_auth0_event_code"
+        }
+    ]);
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/logs"))
+        .and(bearer_token("test_token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(&logs_response))
+        .mount(&server)
+        .await;
+
+    let logs = client.logs().list(None).await.expect("Failed to list logs");
+
+    assert_eq!(logs[0].event_name(), "MFA Auth failed");
+    assert_eq!(logs[0].readable_description(), "MFA Auth failed");
+    assert_eq!(logs[1].event_name(), "Success API Operation");
+    assert_eq!(logs[1].readable_description(), "Success API Operation");
+    assert_eq!(logs[2].event_name(), "new_auth0_event_code");
+    assert_eq!(logs[2].readable_description(), "new_auth0_event_code");
 }

@@ -227,6 +227,12 @@ impl ManagementClient {
         }
     }
 
+    #[cfg(any(
+        feature = "clients",
+        feature = "connections",
+        feature = "jobs",
+        feature = "users"
+    ))]
     pub(crate) async fn post<T: DeserializeOwned, B: Serialize>(
         &self,
         url: Url,
