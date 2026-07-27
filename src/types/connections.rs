@@ -110,6 +110,48 @@ pub struct ListConnectionsParams {
     pub include_fields: Option<bool>,
 }
 
+/// Query parameters for listing clients enabled for a connection.
+///
+/// This endpoint uses checkpoint pagination. Pass the `next` value from a
+/// response as `from` to retrieve the following page.
+///
+/// See the [Auth0 Get Enabled Clients documentation](https://auth0.com/docs/api/management/v2/connections/get-connection-clients)
+/// for pagination limits and response details.
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct ListConnectionClientsParams {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub take: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub from: Option<String>,
+}
+
+/// A client for which a connection is enabled.
+///
+/// See the [Auth0 Get Enabled Clients documentation](https://auth0.com/docs/api/management/v2/connections/get-connection-clients).
+#[derive(Debug, Clone, Deserialize)]
+pub struct ConnectionClient {
+    pub client_id: String,
+}
+
+/// Checkpoint-paginated clients enabled for a connection.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ConnectionClientsPage {
+    pub clients: Vec<ConnectionClient>,
+    /// Token to pass as `from` when requesting the next page, if one exists.
+    pub next: Option<String>,
+}
+
+/// Enables or disables a connection for one client.
+///
+/// Auth0 accepts at most 50 changes in a single request.
+///
+/// See the [Auth0 Update Enabled Clients documentation](https://auth0.com/docs/api/management/v2/connections/patch-clients).
+#[derive(Debug, Clone, Serialize)]
+pub struct ConnectionClientUpdate {
+    pub client_id: String,
+    pub status: bool,
+}
+
 /// Paginated response for connection list operations.
 ///
 /// Returned when `include_totals` is set to `true` in list parameters.

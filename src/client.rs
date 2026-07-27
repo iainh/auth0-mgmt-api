@@ -247,6 +247,23 @@ impl ManagementClient {
         self.handle_response(response).await
     }
 
+    pub(crate) async fn patch_empty<B: Serialize>(&self, url: Url, body: &B) -> Result<()> {
+        let token = self.get_token().await?;
+        let response = self
+            .http
+            .patch(url)
+            .bearer_auth(&token)
+            .json(body)
+            .send()
+            .await?;
+
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            self.handle_error(response).await
+        }
+    }
+
     pub(crate) async fn delete(&self, url: Url) -> Result<()> {
         let token = self.get_token().await?;
         let response = self.http.delete(url).bearer_auth(&token).send().await?;

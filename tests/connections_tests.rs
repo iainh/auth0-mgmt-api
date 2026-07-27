@@ -1,6 +1,6 @@
 use auth0_mgmt_api::{
-    ConnectionId, ConnectionStrategy, CreateConnectionRequest, ListConnectionsParams,
-    ManagementClient, UpdateConnectionRequest,
+    ConnectionClientUpdate, ConnectionId, ConnectionStrategy, CreateConnectionRequest,
+    ListConnectionClientsParams, ListConnectionsParams, ManagementClient, UpdateConnectionRequest,
 };
 use wiremock::matchers::{bearer_token, body_json, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -516,6 +516,95 @@ async fn test_delete_connection_not_found() {
         .await;
 
     assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn test_list_connection_clients() {
+    let (server, client) = setup_mock_server().await;
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/connections/con_123/clients"))
+        .and(query_param("take", "25"))
+        .and(query_param("from", "next page/token"))
+        .and(bearer_token("test_token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "clients": [
+                { "client_id": "client_123" },
+                { "client_id": "client_456" }
+            ],
+            "next": "another-token"
+        })))
+        .mount(&server)
+        .await;
+
+    let page = client
+        .connections()
+        .list_clients(
+            ConnectionId::new("con_123"),
+            Some(ListConnectionClientsParams {
+                take: Some(25),
+                from: Some("next page/token".to_string()),
+            }),
+        )
+        .await
+        .expect("Failed to list enabled clients");
+
+    assert_eq!(page.clients.len(), 2);
+    assert_eq!(page.clients[0].client_id, "client_123");
+    assert_eq!(page.next.as_deref(), Some("another-token"));
+}
+
+#[tokio::test]
+async fn test_update_connection_clients() {
+    let (server, client) = setup_mock_server().await;
+
+    Mock::given(method("PATCH"))
+        .and(path("/api/v2/connections/con_123/clients"))
+        .and(bearer_token("test_token"))
+        .and(body_json(serde_json::json!([
+            { "client_id": "client_123", "status": true },
+            { "client_id": "client_456", "status": false }
+        ])))
+        .respond_with(ResponseTemplate::new(204))
+        .mount(&server)
+        .await;
+
+    client
+        .connections()
+        .update_clients(
+            ConnectionId::new("con_123"),
+            vec![
+                ConnectionClientUpdate {
+                    client_id: "client_123".to_string(),
+                    status: true,
+                },
+                ConnectionClientUpdate {
+                    client_id: "client_456".to_string(),
+                    status: false,
+                },
+            ],
+        )
+        .await
+        .expect("Failed to update enabled clients");
+}
+
+#[tokio::test]
+async fn test_delete_connection_user() {
+    let (server, client) = setup_mock_server().await;
+
+    Mock::given(method("DELETE"))
+        .and(path("/api/v2/connections/con_123/users"))
+        .and(query_param("email", "user+tag@example.com"))
+        .and(bearer_token("test_token"))
+        .respond_with(ResponseTemplate::new(204))
+        .mount(&server)
+        .await;
+
+    client
+        .connections()
+        .delete_user(ConnectionId::new("con_123"), "user+tag@example.com")
+        .await
+        .expect("Failed to delete connection user");
 }
 
 #[tokio::test]

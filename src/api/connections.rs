@@ -2,7 +2,8 @@ use crate::client::ManagementClient;
 use crate::error::{Auth0Error, Result};
 use crate::types::ConnectionId;
 use crate::types::connections::{
-    Connection, ConnectionsPage, CreateConnectionRequest, ListConnectionsParams,
+    Connection, ConnectionClientUpdate, ConnectionClientsPage, ConnectionsPage,
+    CreateConnectionRequest, ListConnectionClientsParams, ListConnectionsParams,
     UpdateConnectionRequest,
 };
 
@@ -185,6 +186,74 @@ impl<'a> ConnectionsApi<'a> {
         ))?;
 
         self.client.patch(url, &request).await
+    }
+
+    /// Get clients for which a connection is enabled.
+    ///
+    /// The result uses checkpoint pagination. When `next` is present, pass it
+    /// as [`ListConnectionClientsParams::from`] to retrieve the following page.
+    /// Requires the `read:connections` scope.
+    ///
+    /// # Documentation
+    ///
+    /// <https://auth0.com/docs/api/management/v2/connections/get-connection-clients>
+    pub async fn list_clients(
+        &self,
+        id: ConnectionId,
+        params: Option<ListConnectionClientsParams>,
+    ) -> Result<ConnectionClientsPage> {
+        let mut url = self.client.base_url().join(&format!(
+            "api/v2/connections/{}/clients",
+            urlencoding::encode(id.as_str())
+        ))?;
+
+        if let Some(p) = params {
+            let query = serde_urlencoded::to_string(&p)
+                .map_err(|e| Auth0Error::Configuration(e.to_string()))?;
+            url.set_query(Some(&query));
+        }
+
+        self.client.get(url).await
+    }
+
+    /// Enable or disable this connection for a set of clients.
+    ///
+    /// Each change contains a client ID and its desired enabled status. Auth0
+    /// requires between 1 and 50 changes per request. Requires the
+    /// `update:connections` scope.
+    ///
+    /// # Documentation
+    ///
+    /// <https://auth0.com/docs/api/management/v2/connections/patch-clients>
+    pub async fn update_clients(
+        &self,
+        id: ConnectionId,
+        updates: Vec<ConnectionClientUpdate>,
+    ) -> Result<()> {
+        let url = self.client.base_url().join(&format!(
+            "api/v2/connections/{}/clients",
+            urlencoding::encode(id.as_str())
+        ))?;
+
+        self.client.patch_empty(url, &updates).await
+    }
+
+    /// Delete a database-connection user by email address.
+    ///
+    /// Auth0 currently supports this operation only for database connections.
+    /// It requires the `delete:users` scope.
+    ///
+    /// # Documentation
+    ///
+    /// <https://auth0.com/docs/api/management/v2/connections/delete-users-by-email>
+    pub async fn delete_user(&self, id: ConnectionId, email: &str) -> Result<()> {
+        let mut url = self.client.base_url().join(&format!(
+            "api/v2/connections/{}/users",
+            urlencoding::encode(id.as_str())
+        ))?;
+        url.query_pairs_mut().append_pair("email", email);
+
+        self.client.delete(url).await
     }
 
     /// Delete a connection by its ID.
