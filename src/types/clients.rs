@@ -179,23 +179,24 @@ pub struct ListClientsParams {
     pub app_type: Option<AppType>,
 }
 
-/// Algorithm used to verify assertions made with a client credential.
-///
-/// See the [Auth0 Client Credentials documentation](https://auth0.com/docs/api/management/v2/clients/get-credentials).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum ClientCredentialAlgorithm {
-    RS256,
-    RS384,
-    PS256,
+string_enum! {
+    /// Algorithm used to verify assertions made with a client credential.
+    ///
+    /// See the [Auth0 Client Credentials documentation](https://auth0.com/docs/api/management/v2/clients/get-credentials).
+    pub enum ClientCredentialAlgorithm {
+        RS256 => "RS256",
+        RS384 => "RS384",
+        PS256 => "PS256",
+    }
 }
 
-/// Type of public-key credential configured for a client.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum ClientCredentialType {
-    PublicKey,
-    CertSubjectDn,
-    X509Cert,
+string_enum! {
+    /// Type of public-key credential configured for a client.
+    pub enum ClientCredentialType {
+        PublicKey => "public_key",
+        CertSubjectDn => "cert_subject_dn",
+        X509Cert => "x509_cert",
+    }
 }
 
 /// A public-key credential configured for an Auth0 client.

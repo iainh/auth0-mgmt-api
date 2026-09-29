@@ -1,3 +1,6 @@
+#[macro_use]
+mod macros;
+
 pub mod enums;
 pub mod ids;
 pub mod query;

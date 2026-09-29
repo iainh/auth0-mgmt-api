@@ -2,14 +2,14 @@ use serde::{Deserialize, Serialize};
 
 use super::{ClientId, ConnectionId, JobId, UserId};
 
-/// File format for a user export job.
-///
-/// See the [Auth0 Create Export Users Job documentation](https://auth0.com/docs/api/management/v2/jobs/post-users-exports).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum JobFileFormat {
-    Json,
-    Csv,
+string_enum! {
+    /// File format for a user export job.
+    ///
+    /// See the [Auth0 Create Export Users Job documentation](https://auth0.com/docs/api/management/v2/jobs/post-users-exports).
+    pub enum JobFileFormat {
+        Json => "json",
+        Csv => "csv",
+    }
 }
 
 /// A user profile field to include in a CSV export.
