@@ -1,8 +1,11 @@
 use auth0_mgmt_api::{
-    ClientId, ConnectionClientUpdate, ConnectionId, ConnectionStrategy, CreateConnectionRequest,
-    ListConnectionClientsParams, ListConnectionsParams, ManagementClient, UpdateConnectionRequest,
+    Auth0Error, ClientId, ConnectionClientUpdate, ConnectionId, ConnectionStrategy,
+    CreateConnectionRequest, ListConnectionClientsParams, ListConnectionsParams, ManagementClient,
+    UpdateConnectionRequest,
 };
-use wiremock::matchers::{bearer_token, body_json, method, path, query_param};
+use wiremock::matchers::{
+    bearer_token, body_json, method, path, query_param, query_param_is_missing,
+};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 async fn setup_mock_server() -> (MockServer, ManagementClient) {
@@ -688,4 +691,75 @@ async fn test_get_connection_with_special_characters_in_id() {
         .expect("Failed to get connection with special characters");
 
     assert_eq!(connection.id, "con/with/slashes");
+}
+
+#[tokio::test]
+async fn test_list_all_connection_clients_follows_checkpoints() {
+    let (server, client) = setup_mock_server().await;
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/connections/con_123/clients"))
+        .and(query_param("take", "2"))
+        .and(query_param_is_missing("from"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "clients": [{ "client_id": "client_1" }, { "client_id": "client_2" }],
+            "next": "page-2"
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/connections/con_123/clients"))
+        .and(query_param("take", "2"))
+        .and(query_param("from", "page-2"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "clients": [{ "client_id": "client_3" }]
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let clients = client
+        .connections()
+        .list_all_clients(
+            ConnectionId::new("con_123"),
+            Some(ListConnectionClientsParams {
+                take: Some(2),
+                from: None,
+            }),
+        )
+        .await
+        .expect("Failed to list all enabled clients");
+
+    let ids: Vec<&str> = clients.iter().map(|c| c.client_id.as_str()).collect();
+    assert_eq!(ids, ["client_1", "client_2", "client_3"]);
+}
+
+#[tokio::test]
+async fn test_update_connection_clients_rejects_invalid_batch_sizes() {
+    let (server, client) = setup_mock_server().await;
+
+    Mock::given(method("PATCH"))
+        .and(path("/api/v2/connections/con_123/clients"))
+        .respond_with(ResponseTemplate::new(204))
+        .expect(0)
+        .mount(&server)
+        .await;
+
+    let too_many: Vec<ConnectionClientUpdate> = (0..51)
+        .map(|i| ConnectionClientUpdate {
+            client_id: ClientId::new(format!("client_{i}")),
+            status: true,
+        })
+        .collect();
+
+    for updates in [Vec::new(), too_many] {
+        let error = client
+            .connections()
+            .update_clients(ConnectionId::new("con_123"), updates)
+            .await
+            .expect_err("Expected invalid batch size to be rejected");
+        assert!(matches!(error, Auth0Error::Configuration(_)));
+    }
 }

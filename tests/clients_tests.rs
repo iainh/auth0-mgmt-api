@@ -4,7 +4,9 @@ use auth0_mgmt_api::{
     ListClientsParams, ManagementClient, Patch, UpdateClientCredentialRequest, UpdateClientRequest,
 };
 
-use wiremock::matchers::{bearer_token, body_json, method, path, query_param};
+use wiremock::matchers::{
+    bearer_token, body_json, method, path, query_param, query_param_is_missing,
+};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 async fn setup_mock_server() -> (MockServer, ManagementClient) {
@@ -705,4 +707,47 @@ async fn test_list_connections_enabled_for_client() {
     assert_eq!(page.connections.len(), 1);
     assert_eq!(page.connections[0].id.as_deref(), Some("con_123"));
     assert_eq!(page.next.as_deref(), Some("next-checkpoint"));
+}
+
+#[tokio::test]
+async fn test_list_all_client_connections_follows_checkpoints() {
+    let (server, client) = setup_mock_server().await;
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/clients/client_123/connections"))
+        .and(query_param("strategy", "auth0"))
+        .and(query_param_is_missing("from"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "connections": [{ "id": "con_1", "strategy": "auth0" }],
+            "next": "page-2"
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/clients/client_123/connections"))
+        .and(query_param("strategy", "auth0"))
+        .and(query_param("from", "page-2"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "connections": [{ "id": "con_2", "strategy": "auth0" }]
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let connections = client
+        .clients()
+        .list_all_connections(
+            ClientId::new("client_123"),
+            Some(ListClientConnectionsParams {
+                strategy: Some(vec!["auth0".to_string()]),
+                ..Default::default()
+            }),
+        )
+        .await
+        .expect("Failed to list all client connections");
+
+    let ids: Vec<&str> = connections.iter().filter_map(|c| c.id.as_deref()).collect();
+    assert_eq!(ids, ["con_1", "con_2"]);
 }

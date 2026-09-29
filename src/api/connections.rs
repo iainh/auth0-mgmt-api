@@ -2,10 +2,13 @@ use crate::client::ManagementClient;
 use crate::error::{Auth0Error, Result};
 use crate::types::ConnectionId;
 use crate::types::connections::{
-    Connection, ConnectionClientUpdate, ConnectionClientsPage, ConnectionsPage,
+    Connection, ConnectionClient, ConnectionClientUpdate, ConnectionClientsPage, ConnectionsPage,
     CreateConnectionRequest, ListConnectionClientsParams, ListConnectionsParams,
     UpdateConnectionRequest,
 };
+
+/// Maximum number of enabled-client changes Auth0 accepts in one request.
+const MAX_CONNECTION_CLIENT_UPDATES: usize = 50;
 
 /// API operations for Auth0 Connections.
 ///
@@ -216,10 +219,41 @@ impl<'a> ConnectionsApi<'a> {
         self.client.get(url).await
     }
 
+    /// Get every client for which a connection is enabled.
+    ///
+    /// Follows `next` checkpoint tokens from [`Self::list_clients`] until
+    /// Auth0 returns no further pages. `params.take` sets the page size and
+    /// `params.from` sets the starting checkpoint. Requires the
+    /// `read:connections` scope.
+    ///
+    /// # Documentation
+    ///
+    /// <https://auth0.com/docs/api/management/v2/connections/get-connection-clients>
+    pub async fn list_all_clients(
+        &self,
+        id: ConnectionId,
+        params: Option<ListConnectionClientsParams>,
+    ) -> Result<Vec<ConnectionClient>> {
+        let mut params = params.unwrap_or_default();
+        let mut clients = Vec::new();
+
+        loop {
+            let page = self.list_clients(id.clone(), Some(params.clone())).await?;
+            let page_was_empty = page.clients.is_empty();
+            clients.extend(page.clients);
+
+            match page.next {
+                Some(next) if !page_was_empty => params.from = Some(next),
+                _ => return Ok(clients),
+            }
+        }
+    }
+
     /// Enable or disable this connection for a set of clients.
     ///
     /// Each change contains a client ID and its desired enabled status. Auth0
-    /// requires between 1 and 50 changes per request. Requires the
+    /// requires between 1 and 50 changes per request; other sizes return
+    /// [`Auth0Error::Configuration`] without calling Auth0. Requires the
     /// `update:connections` scope.
     ///
     /// # Documentation
@@ -230,6 +264,13 @@ impl<'a> ConnectionsApi<'a> {
         id: ConnectionId,
         updates: Vec<ConnectionClientUpdate>,
     ) -> Result<()> {
+        if updates.is_empty() || updates.len() > MAX_CONNECTION_CLIENT_UPDATES {
+            return Err(Auth0Error::Configuration(format!(
+                "update_clients requires between 1 and {MAX_CONNECTION_CLIENT_UPDATES} changes, got {}",
+                updates.len()
+            )));
+        }
+
         let url = self.client.base_url().join(&format!(
             "api/v2/connections/{}/clients",
             urlencoding::encode(id.as_str())

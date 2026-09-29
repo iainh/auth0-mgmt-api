@@ -1,9 +1,9 @@
 use crate::client::ManagementClient;
 use crate::error::{Auth0Error, Result};
 use crate::types::clients::{
-    Client, ClientConnectionsPage, ClientCredential, ClientsPage, CreateClientCredentialRequest,
-    CreateClientRequest, ListClientConnectionsParams, ListClientsParams,
-    UpdateClientCredentialRequest, UpdateClientRequest,
+    Client, ClientConnection, ClientConnectionsPage, ClientCredential, ClientsPage,
+    CreateClientCredentialRequest, CreateClientRequest, ListClientConnectionsParams,
+    ListClientsParams, UpdateClientCredentialRequest, UpdateClientRequest,
 };
 use crate::types::{ClientCredentialId, ClientId};
 
@@ -384,5 +384,36 @@ impl<'a> ClientsApi<'a> {
         }
 
         self.client.get(url).await
+    }
+
+    /// Get every connection enabled for a client.
+    ///
+    /// Follows `next` checkpoint tokens from [`Self::list_connections`] until
+    /// Auth0 returns no further pages. Other parameters, such as `strategy`
+    /// and `take`, apply to every page; `from` sets the starting checkpoint.
+    ///
+    /// # Documentation
+    ///
+    /// <https://auth0.com/docs/api/management/v2/clients/get-client-connections>
+    pub async fn list_all_connections(
+        &self,
+        id: ClientId,
+        params: Option<ListClientConnectionsParams>,
+    ) -> Result<Vec<ClientConnection>> {
+        let mut params = params.unwrap_or_default();
+        let mut connections = Vec::new();
+
+        loop {
+            let page = self
+                .list_connections(id.clone(), Some(params.clone()))
+                .await?;
+            let page_was_empty = page.connections.is_empty();
+            connections.extend(page.connections);
+
+            match page.next {
+                Some(next) if !page_was_empty => params.from = Some(next),
+                _ => return Ok(connections),
+            }
+        }
     }
 }
