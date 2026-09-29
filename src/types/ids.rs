@@ -2,277 +2,116 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::ops::Deref;
 
-/// Strongly-typed user identifier.
+/// Define a strongly-typed string identifier.
 ///
-/// Prevents accidental confusion with other ID types (client_id, connection_id, etc.).
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct UserId(String);
+/// Each identifier serializes as its inner string and converts from `String`
+/// and `&str`, so it can be used directly in request and response types.
+macro_rules! define_id {
+    ($(#[$meta:meta])* $name:ident, $label:literal) => {
+        $(#[$meta])*
+        #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+        #[serde(transparent)]
+        pub struct $name(String);
 
-impl UserId {
-    /// Create a new user ID.
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
+        impl $name {
+            #[doc = concat!("Create a new ", $label, ".")]
+            pub fn new(id: impl Into<String>) -> Self {
+                Self(id.into())
+            }
 
-    /// Get the user ID as a string.
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
+            #[doc = concat!("Get the ", $label, " as a string.")]
+            pub fn as_str(&self) -> &str {
+                &self.0
+            }
 
-    /// Convert into the inner string.
-    pub fn into_inner(self) -> String {
-        self.0
-    }
+            /// Convert into the inner string.
+            pub fn into_inner(self) -> String {
+                self.0
+            }
+        }
+
+        impl fmt::Display for $name {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str(&self.0)
+            }
+        }
+
+        impl From<String> for $name {
+            fn from(id: String) -> Self {
+                Self(id)
+            }
+        }
+
+        impl From<&str> for $name {
+            fn from(id: &str) -> Self {
+                Self(id.to_string())
+            }
+        }
+
+        impl AsRef<str> for $name {
+            fn as_ref(&self) -> &str {
+                &self.0
+            }
+        }
+
+        impl Deref for $name {
+            type Target = str;
+
+            fn deref(&self) -> &str {
+                &self.0
+            }
+        }
+
+        impl PartialEq<str> for $name {
+            fn eq(&self, other: &str) -> bool {
+                self.0 == other
+            }
+        }
+
+        impl PartialEq<&str> for $name {
+            fn eq(&self, other: &&str) -> bool {
+                self.0 == *other
+            }
+        }
+    };
 }
 
-impl fmt::Display for UserId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
+define_id!(
+    /// Strongly-typed user identifier.
+    ///
+    /// Prevents accidental confusion with other ID types (client_id, connection_id, etc.).
+    UserId,
+    "user ID"
+);
 
-impl From<String> for UserId {
-    fn from(id: String) -> Self {
-        Self(id)
-    }
-}
+define_id!(
+    /// Strongly-typed client (application) identifier.
+    ///
+    /// Prevents accidental confusion with other ID types (user_id, connection_id, etc.).
+    ClientId,
+    "client ID"
+);
 
-impl From<&str> for UserId {
-    fn from(id: &str) -> Self {
-        Self(id.to_string())
-    }
-}
+define_id!(
+    /// Strongly-typed connection identifier.
+    ///
+    /// Prevents accidental confusion with other ID types (user_id, client_id, etc.).
+    ConnectionId,
+    "connection ID"
+);
 
-impl AsRef<str> for UserId {
-    fn as_ref(&self) -> &str {
-        &self.0
-    }
-}
+define_id!(
+    /// Strongly-typed asynchronous job identifier.
+    ///
+    /// Prevents accidental confusion with user, client, and connection identifiers.
+    JobId,
+    "job ID"
+);
 
-impl Deref for UserId {
-    type Target = str;
-
-    fn deref(&self) -> &str {
-        &self.0
-    }
-}
-
-/// Strongly-typed client (application) identifier.
-///
-/// Prevents accidental confusion with other ID types (user_id, connection_id, etc.).
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct ClientId(String);
-
-impl ClientId {
-    /// Create a new client ID.
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-
-    /// Get the client ID as a string.
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-
-    /// Convert into the inner string.
-    pub fn into_inner(self) -> String {
-        self.0
-    }
-}
-
-impl fmt::Display for ClientId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl From<String> for ClientId {
-    fn from(id: String) -> Self {
-        Self(id)
-    }
-}
-
-impl From<&str> for ClientId {
-    fn from(id: &str) -> Self {
-        Self(id.to_string())
-    }
-}
-
-impl AsRef<str> for ClientId {
-    fn as_ref(&self) -> &str {
-        &self.0
-    }
-}
-
-impl Deref for ClientId {
-    type Target = str;
-
-    fn deref(&self) -> &str {
-        &self.0
-    }
-}
-
-/// Strongly-typed connection identifier.
-///
-/// Prevents accidental confusion with other ID types (user_id, client_id, etc.).
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct ConnectionId(String);
-
-impl ConnectionId {
-    /// Create a new connection ID.
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-
-    /// Get the connection ID as a string.
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-
-    /// Convert into the inner string.
-    pub fn into_inner(self) -> String {
-        self.0
-    }
-}
-
-impl fmt::Display for ConnectionId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl From<String> for ConnectionId {
-    fn from(id: String) -> Self {
-        Self(id)
-    }
-}
-
-impl From<&str> for ConnectionId {
-    fn from(id: &str) -> Self {
-        Self(id.to_string())
-    }
-}
-
-impl AsRef<str> for ConnectionId {
-    fn as_ref(&self) -> &str {
-        &self.0
-    }
-}
-
-impl Deref for ConnectionId {
-    type Target = str;
-
-    fn deref(&self) -> &str {
-        &self.0
-    }
-}
-
-/// Strongly-typed asynchronous job identifier.
-///
-/// Prevents accidental confusion with user, client, and connection identifiers.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct JobId(String);
-
-impl JobId {
-    /// Create a new job ID.
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-
-    /// Get the job ID as a string.
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-
-    /// Convert into the inner string.
-    pub fn into_inner(self) -> String {
-        self.0
-    }
-}
-
-impl fmt::Display for JobId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl From<String> for JobId {
-    fn from(id: String) -> Self {
-        Self(id)
-    }
-}
-
-impl From<&str> for JobId {
-    fn from(id: &str) -> Self {
-        Self(id.to_string())
-    }
-}
-
-impl AsRef<str> for JobId {
-    fn as_ref(&self) -> &str {
-        &self.0
-    }
-}
-
-impl Deref for JobId {
-    type Target = str;
-
-    fn deref(&self) -> &str {
-        &self.0
-    }
-}
-
-/// Strongly-typed client credential identifier.
-///
-/// Prevents accidental confusion with the client that owns the credential.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct ClientCredentialId(String);
-
-impl ClientCredentialId {
-    /// Create a new client credential ID.
-    pub fn new(id: impl Into<String>) -> Self {
-        Self(id.into())
-    }
-
-    /// Get the client credential ID as a string.
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-
-    /// Convert into the inner string.
-    pub fn into_inner(self) -> String {
-        self.0
-    }
-}
-
-impl fmt::Display for ClientCredentialId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl From<String> for ClientCredentialId {
-    fn from(id: String) -> Self {
-        Self(id)
-    }
-}
-
-impl From<&str> for ClientCredentialId {
-    fn from(id: &str) -> Self {
-        Self(id.to_string())
-    }
-}
-
-impl AsRef<str> for ClientCredentialId {
-    fn as_ref(&self) -> &str {
-        &self.0
-    }
-}
-
-impl Deref for ClientCredentialId {
-    type Target = str;
-
-    fn deref(&self) -> &str {
-        &self.0
-    }
-}
+define_id!(
+    /// Strongly-typed client credential identifier.
+    ///
+    /// Prevents accidental confusion with the client that owns the credential.
+    ClientCredentialId,
+    "client credential ID"
+);
