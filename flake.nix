@@ -44,7 +44,7 @@
           # Section added only on Linux systems
           ++ lib.optionals (!stdenv.isDarwin) [
             # Linker
-            mold-wrapped
+            mold
             openssl
           ]
           # Section added only on Darwin (macOS) systems

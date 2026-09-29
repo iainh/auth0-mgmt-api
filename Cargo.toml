@@ -24,12 +24,13 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 wiremock = "0.6"
 
 [features]
-default = ["users", "clients", "connections", "jobs", "logs", "rustls"]
+default = ["users", "clients", "connections", "jobs", "logs", "tickets", "rustls"]
 users = []
 clients = []
 connections = []
 jobs = ["reqwest/multipart"]
 logs = []
+tickets = []
 rustls = ["reqwest/rustls"]
 native-tls = ["reqwest/native-tls"]
 rustls-native-certs = ["rustls"]

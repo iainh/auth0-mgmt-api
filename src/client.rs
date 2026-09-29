@@ -15,6 +15,8 @@ use crate::api::connections::ConnectionsApi;
 use crate::api::jobs::JobsApi;
 #[cfg(feature = "logs")]
 use crate::api::logs::LogsApi;
+#[cfg(feature = "tickets")]
+use crate::api::tickets::TicketsApi;
 #[cfg(feature = "users")]
 use crate::api::users::UsersApi;
 
@@ -208,6 +210,13 @@ impl ManagementClient {
         status == 429 || status == 502 || status == 503 || status == 504
     }
 
+    #[cfg(any(
+        feature = "clients",
+        feature = "connections",
+        feature = "jobs",
+        feature = "logs",
+        feature = "users"
+    ))]
     pub(crate) async fn get<T: DeserializeOwned>(&self, url: Url) -> Result<T> {
         let token = self.get_token().await?;
         let response = self.http.get(url).bearer_auth(&token).send().await?;
@@ -231,6 +240,7 @@ impl ManagementClient {
         feature = "clients",
         feature = "connections",
         feature = "jobs",
+        feature = "tickets",
         feature = "users"
     ))]
     pub(crate) async fn post<T: DeserializeOwned, B: Serialize>(
@@ -372,6 +382,11 @@ impl ManagementClient {
     #[cfg(feature = "logs")]
     pub fn logs(&self) -> LogsApi<'_> {
         LogsApi::new(self)
+    }
+
+    #[cfg(feature = "tickets")]
+    pub fn tickets(&self) -> TicketsApi<'_> {
+        TicketsApi::new(self)
     }
 }
 

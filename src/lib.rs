@@ -25,3 +25,6 @@ pub use types::jobs::*;
 
 #[cfg(feature = "logs")]
 pub use types::logs::*;
+
+#[cfg(feature = "tickets")]
+pub use types::tickets::*;

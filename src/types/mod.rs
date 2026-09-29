@@ -17,6 +17,9 @@ pub mod jobs;
 #[cfg(feature = "logs")]
 pub mod logs;
 
+#[cfg(feature = "tickets")]
+pub mod tickets;
+
 pub mod common;
 
 pub use common::*;
