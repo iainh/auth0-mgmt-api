@@ -1,10 +1,11 @@
 use crate::client::ManagementClient;
 use crate::error::{Auth0Error, Result};
 use crate::types::UserId;
+#[cfg(feature = "logs")]
 use crate::types::logs::{LogEvent, LogsPage};
-use crate::types::users::{
-    CreateUserRequest, GetUserLogsParams, ListUsersParams, UpdateUserRequest, User, UsersPage,
-};
+#[cfg(feature = "logs")]
+use crate::types::users::GetUserLogsParams;
+use crate::types::users::{CreateUserRequest, ListUsersParams, UpdateUserRequest, User, UsersPage};
 
 /// API operations for Auth0 Users.
 ///
@@ -322,6 +323,9 @@ impl<'a> UsersApi<'a> {
     /// # Documentation
     ///
     /// <https://auth0.com/docs/api/management/v2/users/get-logs-by-user>
+    ///
+    /// Requires the `logs` feature, which provides the log event types.
+    #[cfg(feature = "logs")]
     pub async fn get_logs(
         &self,
         id: UserId,
@@ -358,6 +362,9 @@ impl<'a> UsersApi<'a> {
     /// # Documentation
     ///
     /// <https://auth0.com/docs/api/management/v2/users/get-logs-by-user>
+    ///
+    /// Requires the `logs` feature, which provides the log event types.
+    #[cfg(feature = "logs")]
     pub async fn get_logs_with_totals(
         &self,
         id: UserId,

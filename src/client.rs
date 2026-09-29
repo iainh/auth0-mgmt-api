@@ -420,17 +420,13 @@ impl ManagementClientBuilder {
             .audience
             .unwrap_or_else(|| format!("{}api/v2/", base_url));
 
-        let mut builder = Client::builder();
+        let builder = Client::builder();
 
         #[cfg(feature = "rustls")]
-        {
-            builder = builder.tls_backend_rustls();
-        }
+        let builder = builder.tls_backend_rustls();
 
         #[cfg(feature = "native-tls")]
-        {
-            builder = builder.tls_backend_native();
-        }
+        let builder = builder.tls_backend_native();
 
         let http = builder
             .user_agent(concat!(
