@@ -12,6 +12,37 @@ string_enum! {
     }
 }
 
+string_enum! {
+    /// Progress state of an asynchronous job.
+    ///
+    /// Auth0 documents the status as a free-form string, so values this crate
+    /// does not know are kept in [`JobStatus::Other`].
+    pub enum JobStatus {
+        Pending => "pending",
+        Processing => "processing",
+        Completed => "completed",
+        Failed => "failed",
+    }
+}
+
+impl JobStatus {
+    /// Whether the job has stopped running, successfully or not.
+    ///
+    /// Unrecognized statuses are treated as still running.
+    pub fn is_finished(&self) -> bool {
+        matches!(self, Self::Completed | Self::Failed)
+    }
+}
+
+string_enum! {
+    /// Kind of asynchronous job.
+    pub enum JobType {
+        UsersImport => "users_import",
+        UsersExport => "users_export",
+        VerificationEmail => "verification_email",
+    }
+}
+
 /// A user profile field to include in a CSV export.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExportUsersField {
@@ -99,8 +130,8 @@ pub struct JobSummary {
 pub struct Job {
     pub id: JobId,
     #[serde(rename = "type")]
-    pub job_type: String,
-    pub status: String,
+    pub job_type: JobType,
+    pub status: JobStatus,
     pub created_at: Option<String>,
     pub connection_id: Option<ConnectionId>,
     pub external_id: Option<String>,
@@ -132,8 +163,8 @@ pub struct JobImportError {
 pub struct GenericJobError {
     pub id: JobId,
     #[serde(rename = "type")]
-    pub job_type: String,
-    pub status: String,
+    pub job_type: JobType,
+    pub status: JobStatus,
     pub created_at: Option<String>,
     pub connection_id: Option<ConnectionId>,
     pub status_details: Option<String>,

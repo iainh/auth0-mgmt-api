@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+use crate::types::JobId;
+
 #[derive(Error, Debug)]
 pub enum Auth0Error {
     #[error("HTTP request failed: {0}")]
@@ -26,6 +28,10 @@ pub enum Auth0Error {
 
     #[error("Configuration error: {0}")]
     Configuration(String),
+
+    /// A job did not finish before the caller's deadline.
+    #[error("Timed out waiting for job {job_id} (last status: {last_status})")]
+    JobTimeout { job_id: JobId, last_status: String },
 }
 
 pub type Result<T> = std::result::Result<T, Auth0Error>;

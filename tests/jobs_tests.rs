@@ -1,6 +1,9 @@
+use std::time::Duration;
+
 use auth0_mgmt_api::{
-    ClientId, ConnectionId, ExportUsersField, ExportUsersRequest, ImportUsersRequest, JobErrors,
-    JobFileFormat, JobId, ManagementClient, UserId, VerificationEmailRequest,
+    Auth0Error, ClientId, ConnectionId, ExportUsersField, ExportUsersRequest, ImportUsersRequest,
+    JobErrors, JobFileFormat, JobId, JobStatus, JobType, ManagementClient, UserId,
+    VerificationEmailRequest,
 };
 use wiremock::matchers::{
     bearer_token, body_json, body_string_contains, header_regex, method, path,
@@ -68,7 +71,7 @@ async fn test_export_users() {
         .expect("Failed to create user export job");
 
     assert_eq!(job.id, "job_export");
-    assert_eq!(job.job_type, "users_export");
+    assert_eq!(job.job_type, JobType::UsersExport);
     assert_eq!(job.format, Some(JobFileFormat::Csv));
 }
 
@@ -153,7 +156,7 @@ async fn test_send_verification_email() {
         .await
         .expect("Failed to send verification email");
 
-    assert_eq!(job.status, "completed");
+    assert_eq!(job.status, JobStatus::Completed);
 }
 
 #[tokio::test]
@@ -246,7 +249,7 @@ async fn test_get_generic_job_error() {
 
     match errors {
         JobErrors::Generic(error) => {
-            assert_eq!(error.status, "failed");
+            assert_eq!(error.status, JobStatus::Failed);
             assert_eq!(
                 error.status_details.as_deref(),
                 Some("The import file could not be processed")
@@ -274,4 +277,118 @@ async fn test_get_job_errors_with_no_content() {
         .expect("Failed to get job errors");
 
     assert!(errors.is_none());
+}
+
+#[tokio::test]
+async fn test_wait_for_completion_polls_until_finished() {
+    let (server, client) = setup_mock_server().await;
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/jobs/job_export"))
+        .and(bearer_token("test_token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "id": "job_export",
+            "type": "users_export",
+            "status": "processing",
+            "percentage_done": 50
+        })))
+        .up_to_n_times(2)
+        .expect(2)
+        .mount(&server)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/jobs/job_export"))
+        .and(bearer_token("test_token"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "id": "job_export",
+            "type": "users_export",
+            "status": "completed",
+            "location": "https://example.com/export.json.gz"
+        })))
+        // One call from the poller and one from the follow-up get below.
+        .expect(2)
+        .mount(&server)
+        .await;
+
+    let created = JobId::new("job_export");
+    let job = client
+        .jobs()
+        .wait_for_completion(created, Duration::from_millis(5), Duration::from_secs(5))
+        .await
+        .expect("Failed to wait for job");
+
+    assert_eq!(job.status, JobStatus::Completed);
+    assert_eq!(
+        job.location.as_deref(),
+        Some("https://example.com/export.json.gz")
+    );
+
+    // The returned ID can be passed straight back to the API.
+    let again = client.jobs().get(job.id).await;
+    assert!(again.is_ok());
+}
+
+#[tokio::test]
+async fn test_wait_for_completion_returns_failed_jobs() {
+    let (server, client) = setup_mock_server().await;
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/jobs/job_failed"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "id": "job_failed",
+            "type": "users_import",
+            "status": "failed"
+        })))
+        .mount(&server)
+        .await;
+
+    let job = client
+        .jobs()
+        .wait_for_completion(
+            JobId::new("job_failed"),
+            Duration::from_millis(5),
+            Duration::from_secs(5),
+        )
+        .await
+        .expect("A failed job is still a finished job");
+
+    assert_eq!(job.status, JobStatus::Failed);
+    assert_eq!(job.job_type, JobType::UsersImport);
+}
+
+#[tokio::test]
+async fn test_wait_for_completion_times_out() {
+    let (server, client) = setup_mock_server().await;
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/jobs/job_slow"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "id": "job_slow",
+            "type": "users_import",
+            "status": "some_new_status"
+        })))
+        .mount(&server)
+        .await;
+
+    let error = client
+        .jobs()
+        .wait_for_completion(
+            JobId::new("job_slow"),
+            Duration::from_millis(5),
+            Duration::from_millis(30),
+        )
+        .await
+        .expect_err("Expected a timeout");
+
+    match error {
+        Auth0Error::JobTimeout {
+            job_id,
+            last_status,
+        } => {
+            assert_eq!(job_id, "job_slow");
+            assert_eq!(last_status, "some_new_status");
+        }
+        other => panic!("Expected JobTimeout, got {other:?}"),
+    }
 }

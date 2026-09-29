@@ -1,7 +1,10 @@
+use std::time::Duration;
+
 use reqwest::multipart::{Form, Part};
+use tokio::time::Instant;
 
 use crate::client::ManagementClient;
-use crate::error::Result;
+use crate::error::{Auth0Error, Result};
 use crate::types::JobId;
 use crate::types::jobs::{
     ExportUsersRequest, ImportUsersRequest, Job, JobErrors, VerificationEmailRequest,
@@ -90,6 +93,40 @@ impl<'a> JobsApi<'a> {
             .base_url()
             .join(&format!("api/v2/jobs/{}", urlencoding::encode(id.as_str())))?;
         self.client.get(url).await
+    }
+
+    /// Poll a job until it completes or fails.
+    ///
+    /// Calls [`Self::get`] every `poll_interval` and returns the job once
+    /// [`JobStatus::is_finished`](crate::types::jobs::JobStatus::is_finished) is true. A failed job is returned as `Ok`;
+    /// check [`Job::status`] and use [`Self::get_errors`] for details.
+    ///
+    /// Returns [`Auth0Error::JobTimeout`] if the job is still running when
+    /// `timeout` elapses. Auth0 limits how many jobs can be active and rate
+    /// limits the Management API, so avoid very short poll intervals.
+    pub async fn wait_for_completion(
+        &self,
+        id: JobId,
+        poll_interval: Duration,
+        timeout: Duration,
+    ) -> Result<Job> {
+        let deadline = Instant::now() + timeout;
+
+        loop {
+            let job = self.get(id.clone()).await?;
+            if job.status.is_finished() {
+                return Ok(job);
+            }
+
+            if Instant::now() + poll_interval > deadline {
+                return Err(Auth0Error::JobTimeout {
+                    job_id: id,
+                    last_status: job.status.to_string(),
+                });
+            }
+
+            tokio::time::sleep(poll_interval).await;
+        }
     }
 
     /// Get error details for a completed job.
