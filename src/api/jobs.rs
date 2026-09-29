@@ -49,7 +49,7 @@ impl<'a> JobsApi<'a> {
             .mime_str("application/json")?;
         let mut form = Form::new()
             .part("users", users)
-            .text("connection_id", request.connection_id);
+            .text("connection_id", request.connection_id.into_inner());
 
         if let Some(upsert) = request.upsert {
             form = form.text("upsert", upsert.to_string());

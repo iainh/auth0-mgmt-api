@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use super::Patch;
+use super::{ClientCredentialId, ConnectionId, Patch};
+
 use super::enums::{
     AppType, GrantType, OrganizationRequireBehavior, OrganizationUsage, TokenAuthMethod,
 };
@@ -200,7 +201,7 @@ pub enum ClientCredentialType {
 /// A public-key credential configured for an Auth0 client.
 #[derive(Debug, Clone, Deserialize)]
 pub struct ClientCredential {
-    pub id: Option<String>,
+    pub id: Option<ClientCredentialId>,
     pub name: Option<String>,
     pub kid: Option<String>,
     pub alg: Option<ClientCredentialAlgorithm>,
@@ -268,7 +269,7 @@ pub struct ListClientConnectionsParams {
 /// more strategies here than the connection-creation API.
 #[derive(Debug, Clone, Deserialize)]
 pub struct ClientConnection {
-    pub id: Option<String>,
+    pub id: Option<ConnectionId>,
     pub name: Option<String>,
     pub display_name: Option<String>,
     pub strategy: Option<String>,

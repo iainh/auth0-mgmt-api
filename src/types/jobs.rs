@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use super::{ClientId, ConnectionId, JobId, UserId};
+
 /// File format for a user export job.
 ///
 /// See the [Auth0 Create Export Users Job documentation](https://auth0.com/docs/api/management/v2/jobs/post-users-exports).
@@ -27,7 +29,7 @@ pub struct ExportUsersField {
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct ExportUsersRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub connection_id: Option<String>,
+    pub connection_id: Option<ConnectionId>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub format: Option<JobFileFormat>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -46,19 +48,22 @@ pub struct ExportUsersRequest {
 #[derive(Debug, Clone)]
 pub struct ImportUsersRequest {
     pub users: Vec<u8>,
-    pub connection_id: String,
+    pub connection_id: ConnectionId,
     pub upsert: Option<bool>,
     pub external_id: Option<String>,
     pub send_completion_email: Option<bool>,
 }
 
 /// Identity details used when sending verification for a non-primary database identity.
+///
+/// `user_id` is the provider-specific identity ID, such as `abc123` for the
+/// identity behind `google-oauth2|abc123`, so it is not a [`UserId`].
 #[derive(Debug, Clone, Serialize)]
 pub struct VerificationEmailIdentity {
     pub user_id: String,
     pub provider: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub connection_id: Option<String>,
+    pub connection_id: Option<ConnectionId>,
 }
 
 /// Request payload for an email verification job.
@@ -66,9 +71,9 @@ pub struct VerificationEmailIdentity {
 /// See the [Auth0 Send Verification Email documentation](https://auth0.com/docs/api/management/v2/jobs/post-verification-email).
 #[derive(Debug, Clone, Serialize)]
 pub struct VerificationEmailRequest {
-    pub user_id: String,
+    pub user_id: UserId,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub client_id: Option<String>,
+    pub client_id: Option<ClientId>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identity: Option<VerificationEmailIdentity>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -92,12 +97,12 @@ pub struct JobSummary {
 /// See the [Auth0 Get a Job documentation](https://auth0.com/docs/api/management/v2/jobs/get-jobs-by-id).
 #[derive(Debug, Clone, Deserialize)]
 pub struct Job {
-    pub id: String,
+    pub id: JobId,
     #[serde(rename = "type")]
     pub job_type: String,
     pub status: String,
     pub created_at: Option<String>,
-    pub connection_id: Option<String>,
+    pub connection_id: Option<ConnectionId>,
     pub external_id: Option<String>,
     pub location: Option<String>,
     pub percentage_done: Option<u64>,
@@ -125,12 +130,12 @@ pub struct JobImportError {
 /// A job-level failure rather than a per-user import validation failure.
 #[derive(Debug, Clone, Deserialize)]
 pub struct GenericJobError {
-    pub id: String,
+    pub id: JobId,
     #[serde(rename = "type")]
     pub job_type: String,
     pub status: String,
     pub created_at: Option<String>,
-    pub connection_id: Option<String>,
+    pub connection_id: Option<ConnectionId>,
     pub status_details: Option<String>,
 }
 

@@ -1,6 +1,6 @@
 use auth0_mgmt_api::{
-    ExportUsersField, ExportUsersRequest, ImportUsersRequest, JobErrors, JobFileFormat, JobId,
-    ManagementClient, VerificationEmailRequest,
+    ClientId, ConnectionId, ExportUsersField, ExportUsersRequest, ImportUsersRequest, JobErrors,
+    JobFileFormat, JobId, ManagementClient, UserId, VerificationEmailRequest,
 };
 use wiremock::matchers::{
     bearer_token, body_json, body_string_contains, header_regex, method, path,
@@ -56,7 +56,7 @@ async fn test_export_users() {
     let job = client
         .jobs()
         .export_users(ExportUsersRequest {
-            connection_id: Some("con_123".to_string()),
+            connection_id: Some(ConnectionId::new("con_123")),
             format: Some(JobFileFormat::Csv),
             limit: Some(100),
             fields: Some(vec![ExportUsersField {
@@ -110,7 +110,7 @@ async fn test_import_users_as_multipart() {
         .jobs()
         .import_users(ImportUsersRequest {
             users: users.as_bytes().to_vec(),
-            connection_id: "con_123".to_string(),
+            connection_id: ConnectionId::new("con_123"),
             upsert: Some(true),
             external_id: Some("migration-42".to_string()),
             send_completion_email: Some(false),
@@ -145,8 +145,8 @@ async fn test_send_verification_email() {
     let job = client
         .jobs()
         .send_verification_email(VerificationEmailRequest {
-            user_id: "auth0|123".to_string(),
-            client_id: Some("client_123".to_string()),
+            user_id: UserId::new("auth0|123"),
+            client_id: Some(ClientId::new("client_123")),
             identity: None,
             organization_id: Some("org_123".to_string()),
         })

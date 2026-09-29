@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+use super::ClientId;
 use super::enums::ConnectionStrategy;
 
 /// Represents an Auth0 connection.
@@ -130,7 +131,7 @@ pub struct ListConnectionClientsParams {
 /// See the [Auth0 Get Enabled Clients documentation](https://auth0.com/docs/api/management/v2/connections/get-connection-clients).
 #[derive(Debug, Clone, Deserialize)]
 pub struct ConnectionClient {
-    pub client_id: String,
+    pub client_id: ClientId,
 }
 
 /// Checkpoint-paginated clients enabled for a connection.
@@ -148,7 +149,7 @@ pub struct ConnectionClientsPage {
 /// See the [Auth0 Update Enabled Clients documentation](https://auth0.com/docs/api/management/v2/connections/patch-clients).
 #[derive(Debug, Clone, Serialize)]
 pub struct ConnectionClientUpdate {
-    pub client_id: String,
+    pub client_id: ClientId,
     pub status: bool,
 }
 

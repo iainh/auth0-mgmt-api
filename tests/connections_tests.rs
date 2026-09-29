@@ -1,5 +1,5 @@
 use auth0_mgmt_api::{
-    ConnectionClientUpdate, ConnectionId, ConnectionStrategy, CreateConnectionRequest,
+    ClientId, ConnectionClientUpdate, ConnectionId, ConnectionStrategy, CreateConnectionRequest,
     ListConnectionClientsParams, ListConnectionsParams, ManagementClient, UpdateConnectionRequest,
 };
 use wiremock::matchers::{bearer_token, body_json, method, path, query_param};
@@ -575,11 +575,11 @@ async fn test_update_connection_clients() {
             ConnectionId::new("con_123"),
             vec![
                 ConnectionClientUpdate {
-                    client_id: "client_123".to_string(),
+                    client_id: ClientId::new("client_123"),
                     status: true,
                 },
                 ConnectionClientUpdate {
-                    client_id: "client_456".to_string(),
+                    client_id: ClientId::new("client_456"),
                     status: false,
                 },
             ],
