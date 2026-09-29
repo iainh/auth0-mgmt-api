@@ -88,10 +88,6 @@ impl ManagementClient {
         ManagementClientBuilder::default()
     }
 
-    pub(crate) fn base_url(&self) -> &Url {
-        &self.base_url
-    }
-
     async fn get_token(&self) -> Result<String> {
         {
             let token = self.token.read().await;
@@ -209,55 +205,57 @@ impl ManagementClient {
     fn is_retryable_status(status: u16) -> bool {
         status == 429 || status == 502 || status == 503 || status == 504
     }
+}
 
-    #[cfg(any(
+/// Authenticated HTTP helpers used by the API modules.
+///
+/// Each API feature uses a different subset of these helpers. Dead-code
+/// warnings are enforced when every API feature is enabled, which is the
+/// default build, and suppressed for partial feature sets.
+#[cfg_attr(
+    not(all(
+        feature = "users",
         feature = "clients",
         feature = "connections",
         feature = "jobs",
         feature = "logs",
-        feature = "users"
-    ))]
-    pub(crate) async fn get<T: DeserializeOwned>(&self, url: Url) -> Result<T> {
-        let token = self.get_token().await?;
-        let response = self.http.get(url).bearer_auth(&token).send().await?;
-
-        self.handle_response(response).await
+        feature = "tickets"
+    )),
+    allow(dead_code)
+)]
+impl ManagementClient {
+    pub(crate) fn base_url(&self) -> &Url {
+        &self.base_url
     }
 
-    #[cfg(feature = "jobs")]
-    pub(crate) async fn get_optional<T: DeserializeOwned>(&self, url: Url) -> Result<Option<T>> {
+    /// Attach a bearer token to a request and send it.
+    async fn send(&self, request: reqwest::RequestBuilder) -> Result<reqwest::Response> {
         let token = self.get_token().await?;
-        let response = self.http.get(url).bearer_auth(&token).send().await?;
+        Ok(request.bearer_auth(&token).send().await?)
+    }
 
+    pub(crate) async fn get<T: DeserializeOwned>(&self, url: Url) -> Result<T> {
+        let response = self.send(self.http.get(url)).await?;
+        Self::handle_response(response).await
+    }
+
+    /// GET a resource that may be absent, reported as `204 No Content`.
+    pub(crate) async fn get_optional<T: DeserializeOwned>(&self, url: Url) -> Result<Option<T>> {
+        let response = self.send(self.http.get(url)).await?;
         if response.status() == reqwest::StatusCode::NO_CONTENT {
             Ok(None)
         } else {
-            self.handle_response(response).await.map(Some)
+            Self::handle_response(response).await.map(Some)
         }
     }
 
-    #[cfg(any(
-        feature = "clients",
-        feature = "connections",
-        feature = "jobs",
-        feature = "tickets",
-        feature = "users"
-    ))]
     pub(crate) async fn post<T: DeserializeOwned, B: Serialize>(
         &self,
         url: Url,
         body: &B,
     ) -> Result<T> {
-        let token = self.get_token().await?;
-        let response = self
-            .http
-            .post(url)
-            .bearer_auth(&token)
-            .json(body)
-            .send()
-            .await?;
-
-        self.handle_response(response).await
+        let response = self.send(self.http.post(url).json(body)).await?;
+        Self::handle_response(response).await
     }
 
     #[cfg(feature = "jobs")]
@@ -266,75 +264,47 @@ impl ManagementClient {
         url: Url,
         form: reqwest::multipart::Form,
     ) -> Result<T> {
-        let token = self.get_token().await?;
-        let response = self
-            .http
-            .post(url)
-            .bearer_auth(&token)
-            .multipart(form)
-            .send()
-            .await?;
-
-        self.handle_response(response).await
+        let response = self.send(self.http.post(url).multipart(form)).await?;
+        Self::handle_response(response).await
     }
 
-    #[cfg(any(feature = "clients", feature = "connections", feature = "users"))]
     pub(crate) async fn patch<T: DeserializeOwned, B: Serialize>(
         &self,
         url: Url,
         body: &B,
     ) -> Result<T> {
-        let token = self.get_token().await?;
-        let response = self
-            .http
-            .patch(url)
-            .bearer_auth(&token)
-            .json(body)
-            .send()
-            .await?;
-
-        self.handle_response(response).await
+        let response = self.send(self.http.patch(url).json(body)).await?;
+        Self::handle_response(response).await
     }
 
-    #[cfg(feature = "connections")]
+    /// PATCH an endpoint whose success response has no body worth decoding.
     pub(crate) async fn patch_empty<B: Serialize>(&self, url: Url, body: &B) -> Result<()> {
-        let token = self.get_token().await?;
-        let response = self
-            .http
-            .patch(url)
-            .bearer_auth(&token)
-            .json(body)
-            .send()
-            .await?;
-
-        if response.status().is_success() {
-            Ok(())
-        } else {
-            self.handle_error(response).await
-        }
+        let response = self.send(self.http.patch(url).json(body)).await?;
+        Self::handle_empty(response).await
     }
 
-    #[cfg(any(feature = "clients", feature = "connections", feature = "users"))]
     pub(crate) async fn delete(&self, url: Url) -> Result<()> {
-        let token = self.get_token().await?;
-        let response = self.http.delete(url).bearer_auth(&token).send().await?;
-
-        if response.status().is_success() {
-            Ok(())
-        } else {
-            self.handle_error(response).await
-        }
+        let response = self.send(self.http.delete(url)).await?;
+        Self::handle_empty(response).await
     }
 
-    async fn handle_response<T: DeserializeOwned>(&self, response: reqwest::Response) -> Result<T> {
+    async fn handle_response<T: DeserializeOwned>(response: reqwest::Response) -> Result<T> {
         if response.status().is_success() {
             Ok(response.json().await?)
         } else {
-            self.handle_error(response).await
+            Self::handle_error(response).await
         }
     }
 
-    async fn handle_error<T>(&self, response: reqwest::Response) -> Result<T> {
+    async fn handle_empty(response: reqwest::Response) -> Result<()> {
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            Self::handle_error(response).await
+        }
+    }
+
+    async fn handle_error<T>(response: reqwest::Response) -> Result<T> {
         let status = response.status().as_u16();
 
         if status == 429 {
@@ -358,7 +328,9 @@ impl ManagementClient {
             error_code: error.error_code,
         })
     }
+}
 
+impl ManagementClient {
     #[cfg(feature = "users")]
     pub fn users(&self) -> UsersApi<'_> {
         UsersApi::new(self)
