@@ -68,6 +68,7 @@ Available features:
 - `connections` - Connections API
 - `jobs` - Asynchronous jobs API, including bulk user imports and exports
 - `logs` - Logs API
+- `tickets` - Tickets API, including password-change tickets
 - `rustls` - Use the rustls TLS backend with platform certificate verification
 - `native-tls` - Use the platform-native TLS backend
 - `rustls-native-certs` - Alias for `rustls` for projects that explicitly want rustls with platform certificate verification

@@ -246,7 +246,7 @@ impl<'a> ConnectionsApi<'a> {
     /// # Documentation
     ///
     /// <https://auth0.com/docs/api/management/v2/connections/delete-users-by-email>
-    pub async fn delete_user(&self, id: ConnectionId, email: &str) -> Result<()> {
+    pub async fn delete_user_by_email(&self, id: ConnectionId, email: &str) -> Result<()> {
         let mut url = self.client.base_url().join(&format!(
             "api/v2/connections/{}/users",
             urlencoding::encode(id.as_str())

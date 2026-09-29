@@ -604,7 +604,6 @@ async fn test_get_user_logs_with_params() {
         page: Some(0),
         per_page: Some(10),
         sort: Some("date:-1".to_string()),
-        ..Default::default()
     };
 
     let logs = client

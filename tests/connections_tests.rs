@@ -602,7 +602,7 @@ async fn test_delete_connection_user() {
 
     client
         .connections()
-        .delete_user(ConnectionId::new("con_123"), "user+tag@example.com")
+        .delete_user_by_email(ConnectionId::new("con_123"), "user+tag@example.com")
         .await
         .expect("Failed to delete connection user");
 }

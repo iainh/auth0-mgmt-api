@@ -49,7 +49,7 @@
 
 ### Medium Priority
 - [ ] **Add logging/debugging support**: Implement request/response logging for easier debugging without external interceptors.
-- [ ] **Add connection-specific endpoints**: Implement `/api/v2/connections/{id}/users` and other connection-scoped operations.
+- [x] **Add connection-specific endpoints**: Implement `/api/v2/connections/{id}/users` and other connection-scoped operations.
 - [x] **Support bulk operations**: Expose `/jobs/users-imports` and related bulk operation endpoints.
 - [ ] **Add client credentials rotation**: Allow ManagementClient to rotate its own authentication credentials after initialization.
 
