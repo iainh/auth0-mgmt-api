@@ -59,7 +59,7 @@ By default, all API resources are enabled. You can disable them to reduce compil
 
 ```toml
 [dependencies]
-auth0-mgmt-api = { version = "0.2", default-features = false, features = ["users"] }
+auth0-mgmt-api = { version = "0.4", default-features = false, features = ["users"] }
 ```
 
 Available features:
@@ -79,7 +79,7 @@ this configuration:
 
 ```toml
 [dependencies]
-auth0-mgmt-api = { version = "0.2", default-features = false, features = ["users", "rustls-native-certs"] }
+auth0-mgmt-api = { version = "0.4", default-features = false, features = ["users", "rustls-native-certs"] }
 ```
 
 This keeps the rustls TLS backend while using reqwest's rustls platform
