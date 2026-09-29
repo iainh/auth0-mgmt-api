@@ -1,4 +1,4 @@
-use auth0_mgmt_api::{ListLogsParams, ManagementClient};
+use auth0_mgmt_api::{ListLogsParams, ManagementClient, log_event_name};
 use wiremock::matchers::{bearer_token, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -260,4 +260,21 @@ async fn test_log_event_names_fall_back_safely() {
     assert_eq!(logs[1].readable_description(), "Success API Operation");
     assert_eq!(logs[2].event_name(), "new_auth0_event_code");
     assert_eq!(logs[2].readable_description(), "new_auth0_event_code");
+}
+
+#[test]
+fn test_log_event_name_matches_auth0_codes() {
+    // These codes were mislabelled by the removed LogEventType enum.
+    assert_eq!(
+        log_event_name("fp"),
+        Some("Failed Login (Incorrect Password)")
+    );
+    assert_eq!(
+        log_event_name("fu"),
+        Some("Failed Login (Invalid Email/Username)")
+    );
+    assert_eq!(log_event_name("fui"), Some("Failed users import"));
+    assert_eq!(log_event_name("ss"), Some("Success Signup"));
+    assert_eq!(log_event_name("cls"), Some("Code/Link Sent"));
+    assert_eq!(log_event_name("not_a_real_code"), None);
 }
